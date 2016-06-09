@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "runner.h"
+#include "suite.h"
 
 
 /* Constants */
@@ -13,63 +13,45 @@ const char *_each_before_name = "each_before";
 const char *_each_after_name  = "each_after";
 
 
-/* Types */
-struct test {
-    const char *name;
-    int executed;
-    int result;
-};
-
-
 /* Globals */
-static int _once_before_found;
-static int _once_after_found;
-static int _each_before_found;
-static int _each_after_found;
-
-struct test *_tests;
 int _max;
-int _num;
+struct chili_suite _suite;
 
 
 /* List functions */
-static int _add(const char *symbol)
+static int _add(char *symbol)
 {
-    struct test *test;
+    char **test = _suite.tests + _suite.count;
 
-    if (_num >= _max){
+    if (_suite.count >= _max){
         printf("Tests full\n");
         return -1;
     }
 
-    test = &_tests[_num];
-    test->name = symbol;
-    test->executed = 0;
-    test->result = 0;
-
-    _num++;
+    *test = symbol;
+    _suite.count++;
 
     return 1;
 }
 
 
 /* Eval functions */
-static int _eval_fixture(const char *symbol)
+static int _eval_fixture(char *symbol)
 {
     if (strcmp(symbol, _once_before_name) == 0){
-        _once_before_found = 1;
+        _suite.once_before = _once_before_name;
         return 1;
     }
     if (strcmp(symbol, _once_after_name) == 0){
-        _once_after_found = 1;
+        _suite.once_after = _once_after_name;
         return 1;
     }
     if (strcmp(symbol, _each_before_name) == 0){
-        _each_before_found = 1;
+        _suite.each_after = _each_after_name;
         return 1;
     }
     if (strcmp(symbol, _each_after_name) == 0){
-        _each_after_found = 1;
+        _suite.each_after = _each_after_name;
         return 1;
     }
 
@@ -84,32 +66,27 @@ static int _eval_test(const char *symbol)
     return strncmp(test_, symbol, len) == 0 ? 1 : 0;
 }
 
-
-/* Binding functions */
-
-
 /* Externals */
-int chili_run_begin(int max)
+int chili_suite_begin(int max)
 {
-    int size = sizeof(struct test) * max;
+    int size = sizeof(char*) * max;
+    char **tests = NULL;
 
-    _once_before_found = 0;
-    _once_after_found = 0;
-    _each_before_found = 0;
-    _each_after_found = 0;
     _max = max;
-    _num = 0;
+    memset(&_suite, 0, sizeof(struct chili_suite));
 
-    _tests = malloc(size);
-    if (!_tests){
+    tests = malloc(size);
+    if (!tests){
         printf("Unable to allocate: %s", strerror(errno));
         return -1;
     }
 
+    _suite.tests = tests;
+
     return 1;
 }
 
-int chili_run_eval(const char *symbol)
+int chili_suite_eval(char *symbol)
 {
     int found;
 
@@ -126,12 +103,14 @@ int chili_run_eval(const char *symbol)
     return 0;
 }
 
-int chili_run_tests()
+int chili_suite_get(struct chili_suite **suite)
 {
+    *suite = &_suite;
     return 1;
 }
 
-void chili_run_end()
+void chili_suite_end()
 {
-    free(_tests);
+    free(_suite.tests);
+    _suite.tests = NULL;
 }
