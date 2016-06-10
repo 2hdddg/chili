@@ -3,26 +3,20 @@
 #include "symbols.h"
 #include "suite.h"
 #include "run.h"
+#include "report.h"
 
-static void _print_fixture(struct chili_suite *suite)
-{
-    printf("Fixture:");
-    if (suite->once_before){
-        printf("%s, ", suite->once_before);
-    }
-    if (suite->once_after){
-        printf("%s", suite->once_after);
-    }
-    printf("\n");
-}
 
 static int _run_suite(const char *path, struct chili_suite *suite)
 {
     int r, e;
     struct chili_result result;
 
+    r = chili_report_begin();
+    if (r < 0){
+        return r;
+    }
+
     r = chili_run_begin(path, suite);
-    printf("hello\n");
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
@@ -30,11 +24,15 @@ static int _run_suite(const char *path, struct chili_suite *suite)
     }
 
     do {
+        /* Returns 0 when there is no more tests */
         r = chili_run_next(&result);
+        if (r != 0){
+            chili_report_test(&result);
+        }
     } while (r != 0);
 
-    //r = chili_run_tests();
     e = chili_run_end();
+    chili_report_end();
 
     /* Prefer error from test run as return value */
     return r < 0 ? r : e;
