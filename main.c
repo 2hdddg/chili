@@ -6,17 +6,17 @@
 #include "report.h"
 
 
-static int _run_suite(const char *path, struct chili_suite *suite)
+static int _run_suite(const char *path, struct chili_suite *suite, struct chili_report *report)
 {
     int r, e;
     struct chili_result result;
 
-    r = chili_report_begin();
+    r = chili_report_begin(report);
     if (r < 0){
         return r;
     }
 
-    r = chili_run_begin(path, suite);
+    r = chili_run_begin(path, chili_report_test_begin, suite);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
@@ -31,6 +31,7 @@ static int _run_suite(const char *path, struct chili_suite *suite)
         }
     } while (r != 0);
 
+
     e = chili_run_end();
     chili_report_end();
 
@@ -38,14 +39,19 @@ static int _run_suite(const char *path, struct chili_suite *suite)
     return r < 0 ? r : e;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     int symbol_count;
     int i;
     int r;
     char *name;
+    struct chili_report report;
     struct chili_suite *suite;
-    const char *path = "./chili_ex_fixture.so";
+    const char *path = argv[1];
+
+    report.name = argv[1];
+    report.use_color = 0;
+    report.is_interactive = 0;
 
     /* Initialize modules */
     r = chili_sym_begin(path, &symbol_count);
@@ -70,7 +76,7 @@ int main()
     }
 
     chili_suite_get(&suite);
-    r = _run_suite(path, suite);
+    r = _run_suite(path, suite, &report);
 
 cleanup:
     chili_suite_end();

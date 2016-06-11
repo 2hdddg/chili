@@ -47,7 +47,7 @@ static int _eval_fixture(char *symbol)
         return 1;
     }
     if (strcmp(symbol, _each_before_name) == 0){
-        _suite.each_after = _each_after_name;
+        _suite.each_before = _each_before_name;
         return 1;
     }
     if (strcmp(symbol, _each_after_name) == 0){
