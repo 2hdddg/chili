@@ -51,8 +51,8 @@ static void _print_stats()
 
 static void _print_failure(struct chili_result *result)
 {
-    printf("%s %sfailed%s\n",
-        result->name, _color_fail, _color_reset);
+    printf("%sFailed:%s %s\n",
+        _color_fail, _color_reset, result->name);
 }
 
 /* Exports */

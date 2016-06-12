@@ -1,12 +1,25 @@
+#include <string.h>
 #include <stdio.h>
+#include <getopt.h>
 
 #include "symbols.h"
 #include "suite.h"
 #include "run.h"
 #include "report.h"
 
+/* Types */
+struct commandline_options {
+    int use_color;
+    int is_interactive;
+};
 
-static int _run_suite(const char *path, struct chili_suite *suite, struct chili_report *report)
+
+/* Globals */
+struct commandline_options _options;
+
+
+static int _run_suite(const char *path,
+    struct chili_suite *suite, struct chili_report *report)
 {
     int r, e;
     struct chili_result result;
@@ -39,6 +52,34 @@ static int _run_suite(const char *path, struct chili_suite *suite, struct chili_
     return r < 0 ? r : e;
 }
 
+
+static void _parse_args(int argc, char *argv[])
+{
+    /* Arguments:
+        --color -c
+        --interactive -i
+    */
+    int c;
+    const char *short_options = "ci";
+    const struct option long_options[] = {
+        { "color", no_argument, 0, 'c' },
+        { "interactive", no_argument, 0, 'i' },
+    };
+    int index;
+
+    do {
+        c = getopt_long(argc, argv, short_options, long_options, &index);
+        switch (c){
+            case 'c':
+                _options.use_color = 1;
+                break;
+            case 'i':
+                _options.is_interactive = 1;
+                break;
+        }
+    } while (c != -1);
+}
+
 int main(int argc, char *argv[])
 {
     int symbol_count;
@@ -49,9 +90,12 @@ int main(int argc, char *argv[])
     struct chili_suite *suite;
     const char *path = argv[1];
 
-    report.name = argv[1];
-    report.use_color = 0;
-    report.is_interactive = 0;
+    memset(&_options, 0, sizeof(struct commandline_options));
+    _parse_args(argc, argv);
+
+    report.name = path;
+    report.use_color = _options.use_color;
+    report.is_interactive = _options.is_interactive;
 
     /* Initialize modules */
     r = chili_sym_begin(path, &symbol_count);
