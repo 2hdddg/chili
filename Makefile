@@ -54,3 +54,9 @@ clean:
 	@-rm -rf out
 	@-rm cscope.out -f
 
+examples: FORCE chili
+	@echo Running examples
+	$(MAKE) run -C examples
+
+FORCE:
+

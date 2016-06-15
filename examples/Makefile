@@ -3,11 +3,14 @@ CFLAGS=-std=gnu99 -Wall
 TESTS=$(wildcard *.c)
 TARGETS=$(TESTS:%.c=chili_%.so)
 
-.PHONY:
-run: $(TARGETS)
+.PHONY: run
+run: FORCE $(TARGETS)
+	@echo hello
 	@for TEST in $(TARGETS) ; do \
 		../chili ./$$TEST ; \
 	done
+
+FORCE:
 
 $(TARGETS): chili_%.so: %.c
 	@echo Building $@
