@@ -5,9 +5,8 @@ TARGETS=$(TESTS:%.c=chili_%.so)
 
 .PHONY: run
 run: FORCE $(TARGETS)
-	@echo hello
 	@for TEST in $(TARGETS) ; do \
-		../chili ./$$TEST ; \
+		../chili ./$$TEST --color --interactive ; \
 	done
 
 FORCE:

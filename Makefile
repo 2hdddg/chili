@@ -56,7 +56,7 @@ clean:
 
 examples: FORCE chili
 	@echo Running examples
-	$(MAKE) run -C examples
+	@$(MAKE) run -C examples
 
 FORCE:
 
