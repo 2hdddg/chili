@@ -5,6 +5,7 @@
 #include "symbols.h"
 #include "suite.h"
 #include "run.h"
+#include "redirect.h"
 #include "report.h"
 
 /* Types */
@@ -24,6 +25,8 @@ static int _run_suite(const char *path,
     int r, e;
     struct chili_result result;
 
+    /* Ignore redirect initialization error for now, not fatal */
+    chili_redirect_begin();
     r = chili_report_begin(report);
     if (r < 0){
         return r;
@@ -47,6 +50,7 @@ static int _run_suite(const char *path,
 
     e = chili_run_end();
     chili_report_end();
+    chili_redirect_end();
 
     /* Prefer error from test run as return value */
     return r < 0 ? r : e;

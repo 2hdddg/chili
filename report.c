@@ -1,10 +1,7 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include "run.h"
+#include "redirect.h"
 #include "report.h"
 
 
@@ -53,29 +50,14 @@ static void _print_stats()
     }
 }
 
-static void _print_file(const char *path)
-{
-    int fd = open(path, O_RDONLY);
-    const int max = 1024;
-    char buf[max];
-    int size;
-
-    while ((size = read(fd, buf, max)) > 0){
-        write(1, buf, size);
-    }
-    close(fd);
-}
-
 static void _print_failure(struct chili_result *result)
 {
     printf("%sFailed:%s %s\n",
         _color_fail, _color_reset, result->name);
 
-    if (result->output){
-        printf(">>> Capture start\n");
-        _print_file(result->output);
-        printf("<<< Capture end\n");
-    }
+    chili_redirect_print(result->name,
+        ">>> Capture start\n",
+        "<<< Capture end\n");
 }
 
 /* Exports */

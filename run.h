@@ -9,8 +9,6 @@ struct chili_result {
     int before;
     int test;
     int after;
-    /* Path to stdout from test */
-    const char *output;
 };
 
 typedef void (*chili_test_begin)(const char*);

@@ -2,11 +2,8 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 
+#include "redirect.h"
 #include "run.h"
 
 
@@ -21,10 +18,6 @@ static func _each_before = NULL;
 static func _each_after = NULL;
 static int _next = 0;
 static chili_test_begin _test_begin;
-
-static int _stdout_copy;
-static int _stdout_temp;
-static const char *_stdout_name;
 
 
 /* Invocation */
@@ -47,43 +40,6 @@ static int _invoke_func(const char *name)
     }
 
     return f();
-}
-
-const char* _prepare_stdout_redirection(const char *name)
-{
-    _stdout_temp = creat(name, S_IRUSR|S_IWUSR);
-    if (_stdout_temp == -1){
-        printf("Failed to create file %s due to %s\n",
-            name, strerror(errno));
-        return NULL;
-    }
-    _stdout_name = name;
-    return _stdout_name;
-}
-
-void _redirect_stdout()
-{
-    if (!_stdout_name){
-        return;
-    }
-
-    fflush(stdout);
-    _stdout_copy = dup(1);
-    dup2(_stdout_temp, 1);
-    close(_stdout_temp);
-    _stdout_temp = 0;
-}
-
-void _restore_stdout()
-{
-    if (!_stdout_name){
-        return;
-    }
-
-    fflush(stdout);
-    dup2(_stdout_copy, 1);
-    close(_stdout_copy);
-    _stdout_copy = 0;
 }
 
 
@@ -147,7 +103,6 @@ int chili_run_next(struct chili_result *result)
     const char* name;
     func test;
     int executed = 0;
-    const char* stdout_name;
 
     /* End of tests */
     if (_next >= _suite->count){
@@ -155,8 +110,6 @@ int chili_run_next(struct chili_result *result)
     }
 
     name = _suite->tests[_next];
-
-    stdout_name = _prepare_stdout_redirection(name);
 
     /* Call hook that test begins even before fixtures
      * to give early feedback */
@@ -169,10 +122,9 @@ int chili_run_next(struct chili_result *result)
 
     result->name = name;
     result->before = result->test = result->after = 0;
-    result->output = stdout_name;
 
     /* Any prints below this point might be redirected */
-    _redirect_stdout();
+    chili_redirect_start(name);
 
     /* Do not run test if before fixture fails */
     if (_each_before){
@@ -195,7 +147,7 @@ exit:
         result->after = _each_after();
     }
 
-    _restore_stdout();
+    chili_redirect_stop();
 
     return executed ? 1 : -1;
 }
