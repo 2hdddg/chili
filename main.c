@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <getopt.h>
-#include <unistd.h>
 
 #include "symbols.h"
 #include "suite.h"
@@ -41,8 +40,11 @@ static int _run_suite(const char *path,
     int r, e;
     struct chili_result result;
 
-    /* Ignore redirect initialization error for now, not fatal */
-    chili_redirect_begin(_options.use_redirect, _options.redirect_path);
+    r = chili_redirect_begin(_options.use_redirect, _options.redirect_path);
+    if (r < 0){
+        return r;
+    }
+
     r = chili_report_begin(report);
     if (r < 0){
         return r;
@@ -116,12 +118,6 @@ static int _parse_args(int argc, char *argv[])
 
     if (optind < argc){
         _options.suite_path = argv[optind];
-        /* Check that we have a file */
-        if (access(_options.suite_path, R_OK) < 0){
-            printf("Invalid or unreadable file %s.\n",
-                _options.suite_path);
-            return -1;
-        }
     }
     else{
         printf("No shared library file specified.\n");
