@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include "symbols.h"
 #include "suite.h"
@@ -14,6 +15,7 @@
 
 /* Types */
 struct commandline_options {
+    /* Path to shared library containing tests */
     const char *suite_path;
     /* Colorized output */
     int use_color;
@@ -24,6 +26,7 @@ struct commandline_options {
      * amount of console output. Output from failing
      * tests will be shown. */
     int use_redirect;
+    /* Path to directory where test stdout will be put */
     char redirect_path[PATH_LENGTH];
 };
 
@@ -113,6 +116,16 @@ static int _parse_args(int argc, char *argv[])
 
     if (optind < argc){
         _options.suite_path = argv[optind];
+        /* Check that we have a file */
+        if (access(_options.suite_path, R_OK) < 0){
+            printf("Invalid or unreadable file %s.\n",
+                _options.suite_path);
+            return -1;
+        }
+    }
+    else{
+        printf("No shared library file specified.\n");
+        return -1;
     }
 
     return 1;
