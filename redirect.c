@@ -8,20 +8,29 @@
 
 #include "redirect.h"
 
+
 /* Globals */
+static int _enabled;
+const char *_path;
 static int _stdout_copy;
 static int _stdout_temp;
 static const char *_stdout_name;
 
 
 /* Exports */
-int chili_redirect_begin()
+int chili_redirect_begin(int enable, const char *path)
 {
+    _enabled = enable;
+    _path = path;
     return 1;
 }
 
 void chili_redirect_start(const char *name)
 {
+    if (!_enabled){
+        return;
+    }
+
     _stdout_temp = creat(name, S_IRUSR|S_IWUSR);
     if (_stdout_temp == -1){
         printf("Failed to create file %s due to %s\n",
@@ -39,6 +48,10 @@ void chili_redirect_start(const char *name)
 
 void chili_redirect_stop()
 {
+    if (!_enabled){
+        return;
+    }
+
     if (!_stdout_name){
         return;
     }
@@ -56,6 +69,10 @@ void chili_redirect_print(const char *name,
     const int max = 1024;
     char buf[max];
     int size;
+
+    if (!_enabled){
+        return;
+    }
 
     write(1, before, strlen(before));
 

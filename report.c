@@ -87,7 +87,7 @@ int chili_report_begin(struct chili_report *report)
 
 void chili_report_test_begin(const char *name)
 {
-    if (_report->is_interactive){
+    if (_report->use_cursor){
         printf("Running test %s\n", name);
     }
 }
@@ -124,7 +124,7 @@ void chili_report_test(struct chili_result *result)
     _num_executed++;
     _num_failed += failed ? 1 : 0;
 
-    if (_report->is_interactive){
+    if (_report->use_cursor){
         /* Remove text shown while running test */
         printf("%s%s", _cursor_up, _clear_to_end);
         /* Remove previous stats */
@@ -146,7 +146,7 @@ void chili_report_test(struct chili_result *result)
 
 void chili_report_end()
 {
-    if (!_report->is_interactive){
+    if (!_report->use_cursor){
         _print_stats();
     }
 }

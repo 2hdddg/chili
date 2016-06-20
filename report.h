@@ -3,7 +3,7 @@
 struct chili_report {
     const char* name;
     int use_color;
-    int is_interactive;
+    int use_cursor;
 };
 
 
