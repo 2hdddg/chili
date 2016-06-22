@@ -1,5 +1,8 @@
 #pragma once
 
+#define CHILI_REDIRECT_MAX_PATH 255
+#define CHILI_REDIRECT_MAX_NAME 255
+
 int chili_redirect_begin(int enable, const char *path);
 void chili_redirect_start(const char *name);
 void chili_redirect_stop();

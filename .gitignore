@@ -2,4 +2,4 @@ chili
 *.so
 out/
 cscope.out
-
+examples/chili_log

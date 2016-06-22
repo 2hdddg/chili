@@ -9,9 +9,6 @@
 #include "report.h"
 
 
-/* Defines */
-#define PATH_LENGTH 255
-
 /* Types */
 struct commandline_options {
     /* Path to shared library containing tests */
@@ -26,7 +23,7 @@ struct commandline_options {
      * tests will be shown. */
     int use_redirect;
     /* Path to directory where test stdout will be put */
-    char redirect_path[PATH_LENGTH];
+    char redirect_path[CHILI_REDIRECT_MAX_PATH];
 };
 
 
@@ -107,7 +104,7 @@ static int _parse_args(int argc, char *argv[])
                 break;
             case 'r':
                 len = strlen(optarg);
-                if (len >= PATH_LENGTH){
+                if (len >= CHILI_REDIRECT_MAX_PATH){
                     printf("Redirect path too long.\n");
                     return -1;
                 }
