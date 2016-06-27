@@ -135,8 +135,8 @@ void chili_redirect_stop()
     _stdout_copy = 0;
 }
 
-void chili_redirect_print(const char *name,
-    const char* before, const char* after)
+void chili_redirect_print(const char *name, const char* before, 
+                          const char* after)
 {
     int fd;
     const int max = 1024;
@@ -150,7 +150,9 @@ void chili_redirect_print(const char *name,
         return;
     }
 
-    write(1, before, strlen(before));
+    if (before){
+        write(1, before, strlen(before));
+    }
 
     fd = open(_print_name, O_RDONLY);
     while ((size = read(fd, buf, max)) > 0){
@@ -158,7 +160,9 @@ void chili_redirect_print(const char *name,
     }
     close(fd);
 
-    write(1, after, strlen(after));
+    if (after){
+        write(1, after, strlen(after));
+    }
 }
 
 void chili_redirect_end()

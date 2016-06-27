@@ -116,21 +116,24 @@ static enum endianness _get_endianness(char *map)
     }
 }
 
-static long _get_sections_offset(char *map, enum endianness e, int b)
+static long _get_sections_offset(char *map,
+                                 enum endianness e, int b)
 {
     return b == 32 ?
         _get_32(e, map + 0x20) :
         _get_64(e, map + 0x28);
 }
 
-static int _get_section_count(char *map, enum endianness e, int b)
+static int _get_section_count(char *map,
+                              enum endianness e, int b)
 {
     return b == 32 ?
         _get_16(e, map + 0x30) :
         _get_32(e, map + 0x3c);
 }
 
-static int _get_section_size(char *map, enum endianness e, int b)
+static int _get_section_size(char *map,
+                             enum endianness e, int b)
 {
     return b == 32 ?
         _get_16(e, map + 0x2e) :
@@ -192,7 +195,8 @@ static int _get_symbol(char *map, struct header *header,
     return 1;
 }
 
-static char* _get_string(char *map, struct section *table, long offset)
+static char* _get_string(char *map, struct section *table,
+                         long offset)
 {
     return map + table->offset + offset;
 }
@@ -253,7 +257,8 @@ int chili_sym_begin(const char *path, int *count)
     }
 
     /* Try to find dynstr section */
-    if (_get_section(map, &_header, _dynsym.link, &_dynstr) < 0){
+    if (_get_section(map, &_header, _dynsym.link,
+                     &_dynstr) < 0){
         printf("Unable to find .dynstr section\n");
         goto onerror;
     }
@@ -280,20 +285,23 @@ onerror:
     return -1;
 }
 
-int chili_sym_next(int index, char **name)
+int chili_sym_next(char **name)
 {
     struct symbol symbol;
 
-    if (index < 0 || index >= _count){
-        printf("Illegal symbol index: %d\n", index);
-        return -1;
+    /* End of symbols */
+    if (_next >= _count){
+        return 0;
     }
 
-    if (_get_symbol(_map, &_header, &_dynsym, index, &symbol) <= 0){
+    if (_get_symbol(_map, &_header, &_dynsym, _next,
+                    &symbol) <= 0){
         return -1;
     }
 
     *name = _get_string(_map, &_dynstr, symbol.name);
+
+    _next++;
 
     return 1;
 }

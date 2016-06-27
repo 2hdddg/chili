@@ -37,7 +37,8 @@ static int _run_suite(const char *path,
     int r, e;
     struct chili_result result;
 
-    r = chili_redirect_begin(_options.use_redirect, _options.redirect_path);
+    r = chili_redirect_begin(_options.use_redirect,
+        _options.redirect_path);
     if (r < 0){
         return r;
     }
@@ -87,8 +88,11 @@ static int _parse_args(int argc, char *argv[])
     int index;
     int len;
 
+    memset(&_options, 0, sizeof(struct commandline_options));
+
     do {
-        c = getopt_long(argc, argv, short_options, long_options, &index);
+        c = getopt_long(argc, argv, short_options, 
+                long_options, &index);
         switch (c){
             case 'i':
                 _options.use_color = 1;
@@ -133,7 +137,6 @@ int main(int argc, char *argv[])
     struct chili_report report;
     struct chili_suite *suite;
 
-    memset(&_options, 0, sizeof(struct commandline_options));
     if (_parse_args(argc, argv) < 0){
         return 0;
     }
@@ -153,16 +156,16 @@ int main(int argc, char *argv[])
     }
 
     /* Evaluate symbols to find tests and setup */
-    for (i = 0; i < symbol_count; i++){
-        r = chili_sym_next(i, &name);
-        if (r < 0){
+    do {
+        i = chili_sym_next(&name);
+        if (i < 0){
             goto cleanup;
         }
         r = chili_suite_eval(name);
         if (r < 0){
             goto cleanup;
         }
-    }
+    } while (i > 0);
 
     chili_suite_get(&suite);
     r = _run_suite(_options.suite_path, suite, &report);
