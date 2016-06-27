@@ -4,26 +4,24 @@
 
     - What is Chili ?
 
-      A program that finds and executes unit tests. Used to write nice and
-      slim unit tests in C. Written in C with minimal dependencies to be
-      portable to run on target for embedded development.
-      
+      A program that finds and executes unit tests. Used to write nice
+      and slim unit tests in C. Written in C with minimal dependencies
+      for portability to be used on target for embedded development.
+
     - How does it work ?
 
-      Unit tests are compiled into ELF shared library exposing where each
-      unit test is an exported function and following these simple rules:
-      
+      A suite of unit tests is compiled into an ELF shared library.
+      Each unit test is an exported function following these rules:
+
       * Unit test functions starts with test_
       * Unit test functions takes no arguments
       * Unit test functions returns int
       * Unit test functions returns > 0 on success
       * Unit test functions returns 0 on failure
       * Unit test functions returns < 0 on error
-      
-      Each shared library is considered a test suite that can be setup
-      by Chili. To use common setup in a test suite export one or more
-      of these functions for the desired behaviour:
-      
+
+      To use a common setup in a test suite, export these functions:
+
       * once_before for once per suite setup. Executed before any
         test function.
       * once_after for once per suite cleanup. Executed after all
@@ -32,3 +30,15 @@
         function.
       * each_after for test cleanup. Executed after every test
         function
+
+      All of these functions takes no arguments and their return
+      values follow the same rules as the test functions.
+
+    - How do I run tests ?
+
+      Compile and install Chili on the target system.
+      Compile and copy shared libraries containing tests to the
+      target system and:
+
+      chili testsuite.so
+
