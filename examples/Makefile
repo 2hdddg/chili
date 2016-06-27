@@ -6,7 +6,7 @@ TARGETS=$(TESTS:%.c=chili_%.so)
 .PHONY: run
 run: FORCE $(TARGETS)
 	@for TEST in $(TARGETS) ; do \
-		../chili ./$$TEST --color --interactive ; \
+		../chili ./$$TEST --interactive --redirect ./redirect_$$TEST ; \
 	done
 
 FORCE:
