@@ -7,6 +7,7 @@ SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
+PREFIX=/usr/local
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG -g
@@ -59,4 +60,13 @@ examples: FORCE chili
 	@$(MAKE) run -C examples
 
 FORCE:
+ 
+.PHONY: install
+install: chili
+	mkdir -p $(DESTDIR)$(PREFIX)/bin 
+	cp $< $(DESTDIR)$(PREFIX)/bin/chili
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/chili
 
