@@ -3,8 +3,8 @@ CC=gcc
 CFLAGS=-c -I. -std=gnu99 -Wall -Werror -Wno-error=unused-result
 LD=gcc
 LDFLAGS=-ldl
-SOURCES=$(wildcard *.c)
-OBJECTS=$(SOURCES:%.c=out/%.o)
+SOURCES=$(wildcard src/*.c)
+OBJECTS=$(SOURCES:src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
 PREFIX=/usr/local
@@ -34,9 +34,9 @@ chili: out $(OBJECTS)
 
 cscope.out: $(SOURCES)
 	@echo Generating cscope.out
-	@cscope -b
+	@cscope -b -ssrc
 
-$(OBJECTS): out/%.o: %.c
+$(OBJECTS): out/%.o: src/%.c
 	@echo $(COMPILING)
 	@$(CC) $(CFLAGS) $< -o $@
 
