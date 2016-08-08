@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 int test_print_a_lot()
 {
     int i;

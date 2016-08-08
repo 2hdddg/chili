@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=gnu99 -Wall
+CFLAGS=-std=gnu99 -Wall -fPIC
 TESTS=$(wildcard *.c)
 TARGETS=$(TESTS:%.c=chili_%.so)
 
