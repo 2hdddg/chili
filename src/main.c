@@ -26,19 +26,28 @@ struct commandline_options {
     char redirect_path[CHILI_REDIRECT_MAX_PATH];
 };
 
+enum parsed_commandline {
+    run_suite,
+    display_usage,
+    /* Errors */
+    error_no_suite_specified,
+    error_redirect_path_too_long,
+};
+
 
 /* Globals */
 struct commandline_options _options;
 
 
 static int _run_suite(const char *path,
-    struct chili_suite *suite, struct chili_report *report)
+                      struct chili_suite *suite,
+                      struct chili_report *report)
 {
     int r, e;
     struct chili_result result;
 
     r = chili_redirect_begin(_options.use_redirect,
-        _options.redirect_path);
+                             _options.redirect_path);
     if (r < 0){
         return r;
     }
@@ -73,17 +82,18 @@ static int _run_suite(const char *path,
 }
 
 
-static int _parse_args(int argc, char *argv[])
+static enum parsed_commandline _parse_args(int argc, char *argv[])
 {
     int c;
-    const char *short_options = "icmr:";
+    const char *short_options = "icmrh:";
     const struct option long_options[] = {
         /*   Turns on color, cursor movements and redirect.
          *   Default path for redirect is ./chili_log */
-        { "interactive", no_argument, 0, 'i' },
-        { "color", no_argument, 0, 'c' },
-        { "cursor", no_argument, 0, 'm' },
-        { "redirect", required_argument, 0, 'r' },
+        { "interactive", no_argument,       0, 'i' },
+        { "color",       no_argument,       0, 'c' },
+        { "cursor",      no_argument,       0, 'm' },
+        { "redirect",    required_argument, 0, 'r' },
+        { "help",        no_argument,       0, 'h' },
     };
     int index;
     int len;
@@ -91,8 +101,8 @@ static int _parse_args(int argc, char *argv[])
     memset(&_options, 0, sizeof(struct commandline_options));
 
     do {
-        c = getopt_long(argc, argv, short_options, 
-                long_options, &index);
+        c = getopt_long(argc, argv, short_options,
+                        long_options, &index);
         switch (c){
             case 'i':
                 _options.use_color = 1;
@@ -109,11 +119,13 @@ static int _parse_args(int argc, char *argv[])
             case 'r':
                 len = strlen(optarg);
                 if (len >= CHILI_REDIRECT_MAX_PATH){
-                    printf("Redirect path too long.\n");
-                    return -1;
+                    return error_redirect_path_too_long;
                 }
                 _options.use_redirect = 1;
                 strcpy(_options.redirect_path, optarg);
+                break;
+            case 'h':
+                return display_usage;
         }
     } while (c != -1);
 
@@ -121,11 +133,25 @@ static int _parse_args(int argc, char *argv[])
         _options.suite_path = argv[optind];
     }
     else{
-        printf("No shared library file specified.\n");
-        return -1;
+        return error_no_suite_specified;
     }
 
-    return 1;
+    return run_suite;
+}
+
+void _display_usage()
+{
+    puts("chili - test runner\n"
+         "Usage: chili [OPTIONS]... FILE\n"
+         "FILE is a shared library containing tests\n"
+         "to be invoked.\n"
+         "\n"
+         "Options are:\n"
+         "  -c --color         use colored output\n"
+         "  -m --cursor        minimize output on console,\n"
+         "                     moves cursor\n"
+         "  -r --redirect\n"
+         "  -i --interactive   short for -c -m -r\n");
 }
 
 int main(int argc, char *argv[])
@@ -137,8 +163,22 @@ int main(int argc, char *argv[])
     struct chili_report report;
     struct chili_suite *suite;
 
-    if (_parse_args(argc, argv) < 0){
-        return 0;
+    switch (_parse_args(argc, argv)){
+        case error_redirect_path_too_long:
+            printf("Redirect path is too long.\n");
+            return 0;
+
+        case error_no_suite_specified:
+            printf("Specify path to shared library "
+                   "containing test suite.\n");
+            return 0;
+
+        case display_usage:
+            _display_usage();
+            return 1;
+
+        case run_suite:
+            break;
     }
 
     report.name = _options.suite_path;
@@ -148,30 +188,31 @@ int main(int argc, char *argv[])
     /* Initialize modules */
     r = chili_sym_begin(_options.suite_path, &symbol_count);
     if (r < 0){
-        goto cleanup;
+        goto cleanup_sym;
     }
     r = chili_suite_begin(symbol_count);
     if (r < 0){
-        goto cleanup;
+        goto cleanup_suite;
     }
 
     /* Evaluate symbols to find tests and setup */
     do {
         i = chili_sym_next(&name);
         if (i < 0){
-            goto cleanup;
+            goto cleanup_suite;
         }
         r = chili_suite_eval(name);
         if (r < 0){
-            goto cleanup;
+            goto cleanup_suite;
         }
     } while (i > 0);
 
     chili_suite_get(&suite);
     r = _run_suite(_options.suite_path, suite, &report);
 
-cleanup:
+cleanup_suite:
     chili_suite_end();
+cleanup_sym:
     chili_sym_end();
 
     return r < 0 ? 1 : 0;
