@@ -203,9 +203,7 @@ static uint64_t _get_symbol(char *map, struct header *header,
     map += table->offset +
         (index * table->entsize);
 
-    symbol->name = header->b == 32 ?
-        _get_32(header->e, map) :
-        _get_32(header->e, map);
+    symbol->name = _get_32(header->e, map);
     return 1;
 }
 
