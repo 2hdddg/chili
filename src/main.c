@@ -166,12 +166,12 @@ int main(int argc, char *argv[])
     switch (_parse_args(argc, argv)){
         case error_redirect_path_too_long:
             printf("Redirect path is too long.\n");
-            return 0;
+            return 1;
 
         case error_no_suite_specified:
             printf("Specify path to shared library "
                    "containing test suite.\n");
-            return 0;
+            return 1;
 
         case display_usage:
             _display_usage();

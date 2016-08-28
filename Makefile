@@ -59,6 +59,9 @@ examples: FORCE chili
 	@echo Running examples
 	@$(MAKE) run -C examples
 
+tests: FORCE chili
+	@$(MAKE) run -C test/scenarios/ --no-print-directory
+
 FORCE:
  
 .PHONY: install
