@@ -13,6 +13,9 @@
       A suite of unit tests is compiled into an ELF shared library.
       Each unit test is an exported function following these rules:
 
+      Note that the test code is the simplest possible, you don't
+      need to include any header files or link to any library.
+
       * Unit test functions starts with test_
       * Unit test functions takes no arguments
       * Unit test functions returns int
