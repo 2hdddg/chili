@@ -5,6 +5,9 @@
 
 #include "suite.h"
 
+/* Debugging */
+#define DEBUG 0
+#include "debug.h"
 
 /* Constants */
 const char *_once_before_name = "once_before";
@@ -31,6 +34,8 @@ static int _add(char *symbol)
     *test = symbol;
     _suite.count++;
 
+    debug_print("Found test: %s\n", symbol);
+
     return 1;
 }
 
@@ -40,18 +45,22 @@ static int _eval_fixture(char *symbol)
 {
     if (strcmp(symbol, _once_before_name) == 0){
         _suite.once_before = _once_before_name;
+        debug_print("Found fixture: once before\n");
         return 1;
     }
     if (strcmp(symbol, _once_after_name) == 0){
         _suite.once_after = _once_after_name;
+        debug_print("Found fixture: once after\n");
         return 1;
     }
     if (strcmp(symbol, _each_before_name) == 0){
         _suite.each_before = _each_before_name;
+        debug_print("Found fixture: each before\n");
         return 1;
     }
     if (strcmp(symbol, _each_after_name) == 0){
         _suite.each_after = _each_after_name;
+        debug_print("Found fixture: each after\n");
         return 1;
     }
 
@@ -72,6 +81,8 @@ int chili_suite_begin(int max)
     int size = sizeof(char*) * max;
     char **tests = NULL;
 
+    debug_print("Beginning suite with max %d entries\n", max);
+
     _max = max;
     memset(&_suite, 0, sizeof(struct chili_suite));
 
@@ -89,6 +100,8 @@ int chili_suite_begin(int max)
 int chili_suite_eval(char *symbol)
 {
     int found;
+
+    debug_print("Evaluating symbol %s\n", symbol);
 
     found = _eval_fixture(symbol);
     if (found){
@@ -111,6 +124,8 @@ int chili_suite_get(struct chili_suite **suite)
 
 void chili_suite_end()
 {
+    debug_print("Ending suite\n");
+
     free(_suite.tests);
     _suite.tests = NULL;
 }

@@ -353,6 +353,7 @@ int chili_sym_next(char **name)
     debug_print_symbol(&symbol, _next);
 
     *name = _get_string(_map, &_dynstr, symbol.name);
+    debug_print("Symbol name string: %s\n", *name);
 
     _next++;
 

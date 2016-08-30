@@ -6,6 +6,9 @@
 #include "redirect.h"
 #include "run.h"
 
+/* Debugging */
+#define DEBUG 0
+#include "debug.h"
 
 /* Types */
 typedef int (*func)(void);
@@ -44,8 +47,9 @@ static int _invoke_func(const char *name)
 
 
 /* Exports */
-int chili_run_begin(const char *path, chili_test_begin test_begin,
-    struct chili_suite *suite)
+int chili_run_begin(const char *path,
+                    chili_test_begin test_begin,
+                    struct chili_suite *suite)
 {
     int r = 0;
 
@@ -111,6 +115,8 @@ int chili_run_next(struct chili_result *result)
 
     name = _suite->tests[_next];
 
+    debug_print("Preparing to run %s\n", name);
+
     /* Call hook that test begins even before fixtures
      * to give early feedback */
     if (_test_begin){
@@ -148,6 +154,10 @@ exit:
     }
 
     chili_redirect_stop();
+    /* Now prints isn't redirected */
+    debug_print("%s %s returned %d\n",
+                executed ? "Ran" : "Failed to run",
+                name, result->test);
 
     return executed ? 1 : -1;
 }

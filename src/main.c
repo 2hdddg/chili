@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #include "symbols.h"
 #include "suite.h"
@@ -201,11 +202,16 @@ int main(int argc, char *argv[])
         if (i < 0){
             goto cleanup_suite;
         }
-        r = chili_suite_eval(name);
-        if (r < 0){
-            goto cleanup_suite;
+        else if (i > 0){
+            r = chili_suite_eval(name);
+            if (r < 0){
+                goto cleanup_suite;
+            }
         }
-    } while (i > 0);
+        else{
+            break;
+        }
+    } while (true);
 
     chili_suite_get(&suite);
     r = _run_suite(_options.suite_path, suite, &report);

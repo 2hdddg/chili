@@ -12,7 +12,12 @@ from runner import run, CHILI
 
 
 def test_returns_0_on_test_success():
+    # todo: check that test executed
     return subprocess.call([CHILI, './chili_success.so']) == 0
+
+def test_returns_non_0_on_test_failure():
+    # todo: check that test executed
+    return subprocess.call([CHILI, './chili_failure.so']) != 0
 
 def test_returns_non_0_when_no_test_suite():
     return subprocess.call([CHILI]) != 0
