@@ -8,22 +8,24 @@ import subprocess
 import os
 import sys
 
-from runner import run, CHILI
+from runner import run, chili
 
 
 def test_returns_0_on_test_success():
-    # todo: check that test executed
-    return subprocess.call([CHILI, './chili_success.so']) == 0
+    report = chili(['./chili_success.so'])
+    return report.process_return == 0 and report.num_succeeded > 0
 
 def test_returns_non_0_on_test_failure():
-    # todo: check that test executed
-    return subprocess.call([CHILI, './chili_failure.so']) != 0
+    report = chili(['./chili_failure.so'])
+    return report.process_return != 0 and report.num_failed > 0
 
 def test_returns_non_0_when_no_test_suite():
-    return subprocess.call([CHILI]) != 0
+    report = chili([])
+    return report.process_return != 0
 
 def test_returns_non_0_when_test_suite_doesnt_exist():
-    return subprocess.call([CHILI]) != 0
+    report = chili(['./non_existent.so'])
+    return report.process_return != 0
 
 if __name__ == "__main__":
     sys.exit(run(globals().values(), __file__))
