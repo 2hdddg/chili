@@ -6,7 +6,6 @@ struct chili_report {
     int use_cursor;
 };
 
-
 int chili_report_begin(struct chili_report *report);
 void chili_report_test_begin(const char *name);
 void chili_report_test(struct chili_result *result);

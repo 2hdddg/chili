@@ -35,6 +35,11 @@ enum parsed_commandline {
     error_redirect_path_too_long,
 };
 
+struct aggr_result {
+    int num_succeeded;
+    int num_failed;
+};
+
 
 /* Globals */
 struct commandline_options _options;
@@ -42,9 +47,10 @@ struct commandline_options _options;
 
 static int _run_suite(const char *path,
                       struct chili_suite *suite,
-                      struct chili_report *report)
+                      struct chili_report *report,
+                      struct aggr_result *aggr_result)
 {
-    int r, e;
+    int r;
     struct chili_result result;
 
     r = chili_redirect_begin(_options.use_redirect,
@@ -55,6 +61,7 @@ static int _run_suite(const char *path,
 
     r = chili_report_begin(report);
     if (r < 0){
+        chili_redirect_end();
         return r;
     }
 
@@ -62,24 +69,43 @@ static int _run_suite(const char *path,
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
+        chili_report_end();
+        chili_redirect_end();
         return r;
     }
 
     do {
-        /* Returns 0 when there is no more tests */
+        /*   0 if there were no more tests,
+         * > 0 if setup, test and teardown ran without error,
+         * < 0 if any of above encountered an error */
         r = chili_run_next(&result);
+
+        /* Report even if success, failure or error */
         if (r != 0){
             chili_report_test(&result);
         }
-    } while (r != 0);
 
+        if (r > 0){
+            if (result.test > 0){
+                aggr_result->num_succeeded++;
+            }
+            else{
+                aggr_result->num_failed++;
+            }
+        }
+    } while (r > 0); /* Stop executing on error */
 
-    e = chili_run_end();
+    if (r < 0){
+        chili_run_end();
+        chili_report_end();
+        chili_redirect_end();
+        return r;
+    }
+
+    r = chili_run_end();
     chili_report_end();
     chili_redirect_end();
-
-    /* Prefer error from test run as return value */
-    return r < 0 ? r : e;
+    return r;
 }
 
 
@@ -163,6 +189,7 @@ int main(int argc, char *argv[])
     char *name;
     struct chili_report report;
     struct chili_suite *suite;
+    struct aggr_result aggr_result = { 0 };
 
     switch (_parse_args(argc, argv)){
         case error_redirect_path_too_long:
@@ -214,12 +241,16 @@ int main(int argc, char *argv[])
     } while (true);
 
     chili_suite_get(&suite);
-    r = _run_suite(_options.suite_path, suite, &report);
+    r = _run_suite(_options.suite_path, suite, &report, &aggr_result);
 
 cleanup_suite:
     chili_suite_end();
 cleanup_sym:
     chili_sym_end();
 
-    return r < 0 ? 1 : 0;
+    /* Errors triumphs */
+    if (r < 0){
+        return r;
+    }
+    return aggr_result.num_failed;
 }

@@ -78,7 +78,6 @@ int chili_report_begin(struct chili_report *report)
             _color_fail = _color_reset = "";
     }
 
-
     printf("%sRunning suite %s%s\n",
         _color_headline, report->name, _color_reset);
 

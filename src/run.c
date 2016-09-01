@@ -164,7 +164,7 @@ exit:
 
 int chili_run_end()
 {
-    int r = 0;
+    int r = 1;
 
     if (_suite->once_after){
         r = _invoke_func(_suite->once_after);
