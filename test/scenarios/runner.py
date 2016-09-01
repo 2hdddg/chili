@@ -33,7 +33,8 @@ def run(instances, testfile):
 
     with CurDir(testfile):
         for t in tests:
-            print("Verifying: %s -> %s" % (t.__name__, "ok" if t() else "fail"))
+            name = t.__name__[5:].replace('_', ' ').capitalize()
+            print("Verifying: %s -> %s" % (name, "ok" if t() else "fail"))
 
 
 def chili(options=[]):
