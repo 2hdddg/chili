@@ -37,12 +37,17 @@ def run(instances, testfile):
             print("Verifying: %s -> %s" % (name, "ok" if t() else "fail"))
 
 
-def chili(options=[]):
+def chili(options=[], print_stdout=False, print_stderr=False):
     params = [CHILI]
     params.extend(options)
 
     process = Popen(params, stdout=PIPE, stderr=PIPE)
     stdoutdata, stderrdata = process.communicate()
+
+    if print_stdout:
+        print(stdoutdata)
+    if print_stderr:
+        print(stderrdata)
 
     result = Result(returncode = process.returncode,
                     stdoutdata = stdoutdata,

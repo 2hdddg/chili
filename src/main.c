@@ -9,6 +9,10 @@
 #include "redirect.h"
 #include "report.h"
 
+/* Debugging */
+#define DEBUG 1
+#include "debug.h"
+
 
 /* Types */
 struct commandline_options {
@@ -252,5 +256,12 @@ cleanup_sym:
     if (r < 0){
         return r;
     }
+
+    debug_print("Exiting process\n"
+                "\tnum_succeeded: %d\n"
+                "\tnum_failed: %d\n",
+                aggr_result.num_succeeded,
+                aggr_result.num_failed);
+
     return aggr_result.num_failed;
 }
