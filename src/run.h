@@ -3,7 +3,14 @@
 #include "suite.h"
 
 
-/* Types */
+/**
+ * @brief Represents execution of a single test case
+ *
+ * Members contain name and result of execution of
+ * test setup, the test itself and cleanup. The results
+ * are < 0 if an error occured, 0 if failed, > 0 if
+ * successful.
+ */
 struct chili_result {
     const char *name;
     int before;
