@@ -6,6 +6,7 @@ TARGETS=$(TESTS:%.c=chili_%.so)
 .PHONY: run
 run: FORCE $(TARGETS)
 	@echo Running scenario tests
+	@python process.py
 	@python execution.py
 
 FORCE:

@@ -34,7 +34,7 @@ def run(instances, testfile):
     with CurDir(testfile):
         for t in tests:
             name = t.__name__[5:].replace('_', ' ').capitalize()
-            print("Verifying: %s -> %s" % (name, "ok" if t() else "fail"))
+            print("%s\n%s" % (name, "Ok" if t() else "Fail"))
 
 
 def chili(options=[], print_stdout=False, print_stderr=False):
