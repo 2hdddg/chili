@@ -19,9 +19,9 @@ def test_process_returns_non_0_on_test_failure():
     report = chili(['./chili_failure.so'])
     return report.process_return != 0 and report.num_failed > 0
 
-def test_process_returns_number_of_failed_tests():
-    report = chili(['./chili_failure.so'])
-    return report.process_return == 3 and report.num_failed == 3
+def test_process_returns_non_0_on_suite_setup_error():
+    report = chili(['./chili_suite_setup_error.so'])
+    return report.process_return != 0 and report.num_executed == 0
 
 def test_process_returns_non_0_when_no_test_suite():
     report = chili([])

@@ -254,7 +254,7 @@ cleanup_sym:
 
     /* Errors triumphs */
     if (r < 0){
-        return r;
+        return 1;
     }
 
     debug_print("Exiting process\n"
@@ -263,5 +263,6 @@ cleanup_sym:
                 aggr_result.num_succeeded,
                 aggr_result.num_failed);
 
-    return aggr_result.num_failed;
+    return aggr_result.num_failed > 0 ?
+           1 : 0;
 }
