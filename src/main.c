@@ -89,7 +89,7 @@ static int _run_suite(const char *path,
             chili_report_test(&result);
         }
 
-        if (r > 0){
+        if (r > 0 && result.executed){
             if (result.test > 0){
                 aggr_result->num_succeeded++;
             }

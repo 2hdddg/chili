@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 #include "suite.h"
 
 
@@ -16,6 +18,7 @@ struct chili_result {
     int before;
     int test;
     int after;
+    bool executed;
 };
 
 typedef void (*chili_test_begin)(const char*);
@@ -39,7 +42,8 @@ int chili_run_begin(const char *path,
  * Will invoke next test in the suite. Applies fixtures.
  *
  * @return Negative on error, positive on success and zero if there were
- *         no more tests to execute.
+ *         no more tests to execute. Success doesnt mean that the test
+ *         succeeded only that no errors occured.
 */
 int chili_run_next(struct chili_result *result);
 

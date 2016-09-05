@@ -21,5 +21,11 @@ def test_stops_execution_on_suite_setup_error():
     none_executed = report.num_executed == 0
     return none_executed
 
+def test_stops_execution_on_test_setup_error():
+    report = chili(['./chili_test_setup_error.so'])
+
+    none_executed = report.num_executed == 0
+    return none_executed
+
 if __name__ == "__main__":
     sys.exit(run(globals().values(), __file__))

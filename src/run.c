@@ -106,12 +106,15 @@ int chili_run_next(struct chili_result *result)
 {
     const char* name;
     func test;
-    int executed = 0;
 
     /* End of tests */
     if (_next >= _suite->count){
         return 0;
     }
+
+    result->executed = false;
+    result->before = 0;
+    result->after = 0;
 
     name = _suite->tests[_next];
 
@@ -145,21 +148,25 @@ int chili_run_next(struct chili_result *result)
         goto exit;
     }
     result->test = test();
-    executed = 1;
+    result->executed = true;
 
 exit:
     /* Regardless of output of test, execute after fixture */
-    if (_each_after){
+    if (result->before >= 0 && _each_after){
         result->after = _each_after();
     }
 
     chili_redirect_stop();
-    /* Now prints isn't redirected */
-    debug_print("%s %s returned %d\n",
-                executed ? "Ran" : "Failed to run",
-                name, result->test);
 
-    return executed ? 1 : -1;
+    debug_print("After running %s\n"
+                "\tbefore: %d\n"
+                "\ttest: %d\n"
+                "\tafter: %d\n",
+                name, result->before, result->test, result->after);
+
+    return result->before < 0 ||
+           result->test < 0 ||
+           result->after < 0 ? -1 : 1;
 }
 
 int chili_run_end()
