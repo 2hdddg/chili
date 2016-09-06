@@ -102,9 +102,9 @@ onerror:
     return r;
 }
 
-int chili_run_next(struct chili_result *result)
+int chili_run_next(struct chili_result *result,
+                   struct chili_aggregated *aggregated)
 {
-    const char* name;
     func test;
 
     /* End of tests */
@@ -112,28 +112,24 @@ int chili_run_next(struct chili_result *result)
         return 0;
     }
 
-    result->executed = false;
-    result->before = 0;
-    result->after = 0;
+    result->before = result->after = result->test = 0;
+    result->name = _suite->tests[_next];
 
-    name = _suite->tests[_next];
-
-    debug_print("Preparing to run %s\n", name);
+    debug_print("Preparing to run %s\n", result->name);
 
     /* Call hook that test begins even before fixtures
      * to give early feedback */
     if (_test_begin){
-        _test_begin(name);
+        _test_begin(result->name);
     }
 
     /* Prepare for next so we don't miss it */
     _next++;
 
-    result->name = name;
     result->before = result->test = result->after = 0;
 
     /* Any prints below this point might be redirected */
-    chili_redirect_start(name);
+    chili_redirect_start(result->name);
 
     /* Do not run test if before fixture fails */
     if (_each_before){
@@ -143,12 +139,11 @@ int chili_run_next(struct chili_result *result)
         }
     }
 
-    test = _get_func(name);
+    test = _get_func(result->name);
     if (test == NULL){
         goto exit;
     }
     result->test = test();
-    result->executed = true;
 
 exit:
     /* Regardless of output of test, execute after fixture */
@@ -162,11 +157,25 @@ exit:
                 "\tbefore: %d\n"
                 "\ttest: %d\n"
                 "\tafter: %d\n",
-                name, result->before, result->test, result->after);
+                result->name, result->before, result->test, result->after);
 
-    return result->before < 0 ||
-           result->test < 0 ||
-           result->after < 0 ? -1 : 1;
+    if (result->before < 0 ||
+        result->test < 0 ||
+        result->after < 0){
+        aggregated->num_errors++;
+        aggregated->num_total++;
+        return -1;
+    }
+    else if (result->test > 0){
+        aggregated->num_succeeded++;
+        aggregated->num_total++;
+        return 1;
+    }
+    else{
+        aggregated->num_failed++;
+        aggregated->num_total++;
+        return 1;
+    }
 }
 
 int chili_run_end()

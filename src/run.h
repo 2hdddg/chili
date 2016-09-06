@@ -18,7 +18,13 @@ struct chili_result {
     int before;
     int test;
     int after;
-    bool executed;
+};
+
+struct chili_aggregated {
+    int num_succeeded;
+    int num_failed;
+    int num_errors;
+    int num_total;
 };
 
 typedef void (*chili_test_begin)(const char*);
@@ -45,7 +51,8 @@ int chili_run_begin(const char *path,
  *         no more tests to execute. Success doesnt mean that the test
  *         succeeded only that no errors occured.
 */
-int chili_run_next(struct chili_result *result);
+int chili_run_next(struct chili_result *result,
+                   struct chili_aggregated *aggregated);
 
 /**
  * @brief Releases module

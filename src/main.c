@@ -10,7 +10,7 @@
 #include "report.h"
 
 /* Debugging */
-#define DEBUG 1
+#define DEBUG 0
 #include "debug.h"
 
 
@@ -39,11 +39,6 @@ enum parsed_commandline {
     error_redirect_path_too_long,
 };
 
-struct aggr_result {
-    int num_succeeded;
-    int num_failed;
-};
-
 
 /* Globals */
 struct commandline_options _options;
@@ -52,7 +47,7 @@ struct commandline_options _options;
 static int _run_suite(const char *path,
                       struct chili_suite *suite,
                       struct chili_report *report,
-                      struct aggr_result *aggr_result)
+                      struct chili_aggregated *aggregated)
 {
     int r;
     struct chili_result result;
@@ -73,7 +68,7 @@ static int _run_suite(const char *path,
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
-        chili_report_end();
+        chili_report_end(aggregated);
         chili_redirect_end();
         return r;
     }
@@ -82,32 +77,26 @@ static int _run_suite(const char *path,
         /*   0 if there were no more tests,
          * > 0 if setup, test and teardown ran without error,
          * < 0 if any of above encountered an error */
-        r = chili_run_next(&result);
+        r = chili_run_next(&result, aggregated);
 
-        /* Report even if success, failure or error */
         if (r != 0){
-            chili_report_test(&result);
+            /* Report even if success, failure or error */
+            chili_report_test(&result, aggregated);
         }
-
-        if (r > 0 && result.executed){
-            if (result.test > 0){
-                aggr_result->num_succeeded++;
-            }
-            else{
-                aggr_result->num_failed++;
-            }
+        else{
+            break;
         }
-    } while (r > 0); /* Stop executing on error */
+    } while (true); /* Stop executing on error */
 
     if (r < 0){
         chili_run_end();
-        chili_report_end();
+        chili_report_end(aggregated);
         chili_redirect_end();
         return r;
     }
 
     r = chili_run_end();
-    chili_report_end();
+    chili_report_end(aggregated);
     chili_redirect_end();
     return r;
 }
@@ -193,7 +182,7 @@ int main(int argc, char *argv[])
     char *name;
     struct chili_report report;
     struct chili_suite *suite;
-    struct aggr_result aggr_result = { 0 };
+    struct chili_aggregated aggregated = { 0 };
 
     switch (_parse_args(argc, argv)){
         case error_redirect_path_too_long:
@@ -245,7 +234,7 @@ int main(int argc, char *argv[])
     } while (true);
 
     chili_suite_get(&suite);
-    r = _run_suite(_options.suite_path, suite, &report, &aggr_result);
+    r = _run_suite(_options.suite_path, suite, &report, &aggregated);
 
 cleanup_suite:
     chili_suite_end();
@@ -259,10 +248,12 @@ cleanup_sym:
 
     debug_print("Exiting process\n"
                 "\tnum_succeeded: %d\n"
-                "\tnum_failed: %d\n",
-                aggr_result.num_succeeded,
-                aggr_result.num_failed);
+                "\tnum_failed: %d\n"
+                "\tnum_errors: %d\n",
+                aggregated.num_succeeded,
+                aggregated.num_failed,
+                aggregated.num_errors);
 
-    return aggr_result.num_failed > 0 ?
+    return aggregated.num_failed > 0 ?
            1 : 0;
 }
