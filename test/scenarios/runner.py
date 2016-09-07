@@ -11,7 +11,7 @@ Result = namedtuple('Result',
 
 Report = namedtuple('Report',
                     ['num_executed', 'num_succeeded', 'num_failed',
-                     'process_return'])
+                     'num_errors', 'process_return'])
 
 class CurDir:
     def __init__(self, testfile):
@@ -56,7 +56,7 @@ def chili(options=[], print_stdout=False, print_stderr=False):
     return report
 
 def parse_report(result):
-    pattern = "Executed\ (\d*)\ tests,\ (\d*|all)\ (succeeded|failed)"
+    pattern = "Executed\ (\d*)\ tests,\ (\d*|all)\ (succeeded|failed|with errors)"
     match = re.search(pattern, result.stdoutdata)
 
     if not match:
@@ -67,23 +67,28 @@ def parse_report(result):
 
         return Report(process_return=result.returncode,
                       num_executed=0, num_succeeded=0,
-                      num_failed=0)
+                      num_failed=0, num_errors=0)
 
 
     num_succeeded = 0
     num_failed = 0
+    num_errors = 0
     num_executed = int(match.group(1))
     num_or_all = match.group(2)
-    succeeded_or_failed = match.group(3)
+    outcome = match.group(3)
 
-    if succeeded_or_failed == 'succeeded':
+    if outcome == 'succeeded':
         num_succeeded = num_executed if num_or_all == 'all' else int(num_or_all)
         num_failed = num_executed - num_succeeded
-    else:
+    elif outcome == 'failed':
         num_failed = num_executed if num_or_all == 'all' else int(num_or_all)
         num_succeded = num_executed - num_failed
+    else:
+        num_errors = num_executed if num_or_all == 'all' else int(num_or_all)
+        # Missing parsing of nu_failed and num_succeeded
 
     return Report(process_return=result.returncode,
                   num_executed=num_executed,
                   num_succeeded=num_succeeded,
-                  num_failed=num_failed)
+                  num_failed=num_failed,
+                  num_errors=num_errors)

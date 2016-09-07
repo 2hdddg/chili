@@ -83,19 +83,20 @@ static int _run_suite(const char *path,
             /* Report even if success, failure or error */
             chili_report_test(&result, aggregated);
         }
-        else{
+
+        if (r == 0 || r < 0) {
             break;
         }
     } while (true); /* Stop executing on error */
 
+    /* Preserve error from above */
     if (r < 0){
         chili_run_end();
-        chili_report_end(aggregated);
-        chili_redirect_end();
-        return r;
+    }
+    else {
+        r = chili_run_end();
     }
 
-    r = chili_run_end();
     chili_report_end(aggregated);
     chili_redirect_end();
     return r;
