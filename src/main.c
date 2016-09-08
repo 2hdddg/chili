@@ -50,6 +50,8 @@ static int _run_suite(const char *path,
                       struct chili_aggregated *aggregated)
 {
     int r;
+    bool before_failed;
+    bool after_failed;
     struct chili_result result;
 
     r = chili_redirect_begin(_options.use_redirect,
@@ -64,10 +66,13 @@ static int _run_suite(const char *path,
         return r;
     }
 
-    r = chili_run_begin(path, suite);
+    r = chili_run_begin(path, suite, &before_failed);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
+        if (before_failed){
+            chili_report_suite_begin_fail(r);
+        }
         chili_report_end(aggregated);
         chili_redirect_end();
         return r;
@@ -91,10 +96,13 @@ static int _run_suite(const char *path,
 
     /* Preserve error from above */
     if (r < 0){
-        chili_run_end();
+        chili_run_end(&after_failed);
     }
     else {
-        r = chili_run_end();
+        r = chili_run_end(&after_failed);
+    }
+    if (after_failed){
+        chili_report_suite_end_fail(r);
     }
 
     chili_report_end(aggregated);

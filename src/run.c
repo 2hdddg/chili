@@ -47,9 +47,11 @@ static int _invoke_func(const char *name)
 
 /* Exports */
 int chili_run_begin(const char *path,
-                    struct chili_suite *suite)
+                    struct chili_suite *suite,
+                    bool *before_failed)
 {
     int r = 0;
+    *before_failed = false;
 
     _libhandle = dlopen(path, RTLD_LAZY);
     if (_libhandle == NULL){
@@ -62,6 +64,7 @@ int chili_run_begin(const char *path,
     if (suite->once_before){
         r = _invoke_func(suite->once_before);
         if (r < 0){
+            *before_failed = true;
             goto onerror;
         }
     }
@@ -176,12 +179,14 @@ exit:
     }
 }
 
-int chili_run_end()
+int chili_run_end(bool *after_failed)
 {
     int r = 1;
+    *after_failed = false;
 
     if (_suite->once_after){
         r = _invoke_func(_suite->once_after);
+        *after_failed = r < 0;
     }
 
     if (_libhandle){

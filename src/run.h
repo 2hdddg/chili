@@ -36,10 +36,15 @@ typedef void (*chili_test_begin)(const char*);
  * suite containing names of symbols for fixtures and tests.
  * Applies fixture.
  *
+ * @param before_failed Is set to true when suite setup fails.
+ *                      When true, the return value is the
+ *                      return value from the failed setup
+ *                      function.
  * @return Negative on error, positive on success.
  */
 int chili_run_begin(const char *path,
-                    struct chili_suite *suite);
+                    struct chili_suite *suite,
+                    bool *before_failed);
 
 /**
  * @brief Invokes test.
@@ -57,9 +62,13 @@ int chili_run_next(struct chili_result *result,
 /**
  * @brief Releases module
  *
- * Applies fixture.
+ * Applies fixture cleanup.
+ *
+ * @param after_failed Is set to true when suite cleanup fails.
+ *                     When true, the return value is the return
+ *                     value from the failed setup function.
  *
  * @return Negative on error, positive on success.
  */
-int chili_run_end();
+int chili_run_end(bool *after_failed);
 

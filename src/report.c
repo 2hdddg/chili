@@ -8,13 +8,14 @@
 /* Globals */
 static struct chili_report *_report;
 
-const char *_stats_all_succeded = "Executed %d tests, %sall succeeded%s\n";
-const char *_stats_all_failed = "Executed %d tests, %sall failed%s\n";
-const char *_stats_all_errors = "Executed %d tests, %sall with errors%s\n";
-const char *_stats_some_failed = "Executed %d tests, %s%d failed%s\n";
-const char *_stats_some_failed_errors = "Executed %d tests, "
-                                        "%s%d failed, %d errors%s\n";
-const char *_color_headline_ansi = "\x1b[34m";
+const char *_stats_nothing = "%sNo tests executed%s\n";
+const char *_stats_all_succeded = "%sExecuted %d tests, all succeeded%s\n";
+const char *_stats_all_failed = "%sExecuted %d tests, all failed%s\n";
+const char *_stats_all_errors = "%sExecuted %d tests, all with errors%s\n";
+const char *_stats_some_failed = "%sExecuted %d tests, %d failed%s\n";
+const char *_stats_some_failed_errors = "%sExecuted %d tests, "
+                                        "%d failed, %d errors%s\n";
+const char *_color_headline_ansi = "\x1b[1m\x1b[34m";
 const char *_color_success_ansi = "\x1b[32m";
 const char *_color_fail_ansi = "\x1b[31;1m";
 const char *_color_reset_ansi = "\033[0m";
@@ -36,27 +37,28 @@ static void _print_stats(struct chili_aggregated *aggregated)
     int total = aggregated->num_total;
 
     if (total == 0){
+        printf(_stats_nothing, _color_fail, _color_reset);
     }
     else if (total == successes){
-        printf(_stats_all_succeded,
-            total, _color_success, _color_reset);
+        printf(_stats_all_succeded, _color_success,
+            total, _color_reset);
     }
     else if (total == fails){
-        printf(_stats_all_failed,
-            total, _color_fail, _color_reset);
+        printf(_stats_all_failed, _color_fail,
+            total, _color_reset);
     }
     else if (total == errors){
-        printf(_stats_all_errors,
-            total, _color_fail, _color_reset);
+        printf(_stats_all_errors, _color_fail,
+            total, _color_reset);
     }
     else{
         if (errors == 0){
-            printf(_stats_some_failed,
-                total, _color_fail, fails, _color_reset);
+            printf(_stats_some_failed, _color_fail,
+                total, fails, _color_reset);
         }
         else{
-            printf(_stats_some_failed_errors,
-                total, _color_fail, fails, errors,  _color_reset);
+            printf(_stats_some_failed_errors, _color_fail,
+                total, fails, errors,  _color_reset);
         }
     }
 }
@@ -74,12 +76,12 @@ static void _print_failure(struct chili_result *result)
 static void _print_error(struct chili_result *result)
 {
     if (result->before < 0){
-        printf("%sError in test setup for%s %s\n",
-            _color_fail, _color_reset, result->name);
+        printf("%sError in test setup for %s%s\n",
+            _color_fail, result->name, _color_reset);
     }
     if (result->after < 0){
-        printf("%sError in test cleanup for%s %s\n",
-            _color_fail, _color_reset, result->name);
+        printf("%sError in test cleanup for%s%s\n",
+            _color_fail, result->name, _color_reset);
     }
     if (result->test < 0){
         printf("%sError in test%s %s\n",
@@ -118,6 +120,11 @@ void chili_report_test_begin(const char *name)
     if (_report->use_cursor){
         printf("Running test %s\n", name);
     }
+}
+
+void chili_report_suite_begin_fail(int r)
+{
+    printf("%sError in suite setup%s\n", _color_fail, _color_reset);
 }
 
 /*
@@ -175,6 +182,11 @@ void chili_report_test(struct chili_result *result,
             _print_error(result);
         }
     }
+}
+
+void chili_report_suite_end_fail(int r)
+{
+    printf("%sError in suite teardown%s\n", _color_fail, _color_reset);
 }
 
 void chili_report_end(struct chili_aggregated *aggregated)
