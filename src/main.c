@@ -64,7 +64,7 @@ static int _run_suite(const char *path,
         return r;
     }
 
-    r = chili_run_begin(path, chili_report_test_begin, suite);
+    r = chili_run_begin(path, suite);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
@@ -77,7 +77,7 @@ static int _run_suite(const char *path,
         /*   0 if there were no more tests,
          * > 0 if setup, test and teardown ran without error,
          * < 0 if any of above encountered an error */
-        r = chili_run_next(&result, aggregated);
+        r = chili_run_next(&result, aggregated, chili_report_test_begin);
 
         if (r != 0){
             /* Report even if success, failure or error */

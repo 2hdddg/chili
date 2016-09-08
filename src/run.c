@@ -20,7 +20,6 @@ static struct chili_suite *_suite;
 static func _each_before = NULL;
 static func _each_after = NULL;
 static int _next = 0;
-static chili_test_begin _test_begin;
 
 
 /* Invocation */
@@ -48,7 +47,6 @@ static int _invoke_func(const char *name)
 
 /* Exports */
 int chili_run_begin(const char *path,
-                    chili_test_begin test_begin,
                     struct chili_suite *suite)
 {
     int r = 0;
@@ -88,7 +86,6 @@ int chili_run_begin(const char *path,
         _each_after = NULL;
     }
 
-    _test_begin = test_begin;
     _suite = suite;
     _next = 0;
 
@@ -103,7 +100,8 @@ onerror:
 }
 
 int chili_run_next(struct chili_result *result,
-                   struct chili_aggregated *aggregated)
+                   struct chili_aggregated *aggregated,
+                   chili_test_begin test_begin)
 {
     func test;
 
@@ -119,8 +117,8 @@ int chili_run_next(struct chili_result *result,
 
     /* Call hook that test begins even before fixtures
      * to give early feedback */
-    if (_test_begin){
-        _test_begin(result->name);
+    if (test_begin){
+        test_begin(result->name);
     }
 
     /* Prepare for next so we don't miss it */

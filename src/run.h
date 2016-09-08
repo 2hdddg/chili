@@ -39,7 +39,6 @@ typedef void (*chili_test_begin)(const char*);
  * @return Negative on error, positive on success.
  */
 int chili_run_begin(const char *path,
-                    chili_test_begin test_begin,
                     struct chili_suite *suite);
 
 /**
@@ -52,7 +51,8 @@ int chili_run_begin(const char *path,
  *         succeeded only that no errors occured.
 */
 int chili_run_next(struct chili_result *result,
-                   struct chili_aggregated *aggregated);
+                   struct chili_aggregated *aggregated,
+                   chili_test_begin test_begin);
 
 /**
  * @brief Releases module
