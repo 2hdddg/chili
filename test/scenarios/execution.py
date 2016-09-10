@@ -26,5 +26,14 @@ def test_stops_execution_on_test_setup_error():
 
     return report.num_errors == 1 and report.num_succeeded == 0
 
+def test_stops_execution_on_test_teardown_error():
+    report = chili(['./chili_test_teardown_error.so'])
+    one_executed = report.num_executed == 1
+    one_error = report.num_errors == 1
+    none_succeeded = report.num_succeeded == 0
+
+    return one_executed and one_error and none_succeeded
+
+
 if __name__ == "__main__":
     sys.exit(run(globals().values(), __file__))
