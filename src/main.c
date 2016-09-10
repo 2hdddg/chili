@@ -116,7 +116,7 @@ static int _run_suite(const char *path,
 static enum parsed_commandline _parse_args(int argc, char *argv[])
 {
     int c;
-    const char *short_options = "icmrh:";
+    const char *short_options = "icmnrh:";
     const struct option long_options[] = {
         /*   Turns on color, cursor movements and redirect.
          *   Default path for redirect is ./chili_log */
@@ -151,6 +151,7 @@ static enum parsed_commandline _parse_args(int argc, char *argv[])
                 break;
             case 'n':
                 _options.nice_stats = true;
+                break;
             case 'r':
                 len = strlen(optarg);
                 if (len >= CHILI_REDIRECT_MAX_PATH){
