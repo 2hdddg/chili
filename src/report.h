@@ -1,11 +1,14 @@
 #pragma once
 
+#include <stdbool.h>
+
 #include "run.h"
 
 struct chili_report {
     const char* name;
-    int use_color;
-    int use_cursor;
+    bool use_color;
+    bool use_cursor;
+    bool nice_stats;
 };
 
 int chili_report_begin(struct chili_report *report);

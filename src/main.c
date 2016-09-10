@@ -19,14 +19,16 @@ struct commandline_options {
     /* Path to shared library containing tests */
     const char *suite_path;
     /* Colorized output */
-    int use_color;
+    bool use_color;
     /* Minimize output by moving cursor and overwrite
      * "uninteresting" console output */
-    int use_cursor;
+    bool use_cursor;
     /* Redirect stdout while running tests to minimize
      * amount of console output. Output from failing
      * tests will be shown. */
-    int use_redirect;
+    bool use_redirect;
+
+    bool nice_stats;
     /* Path to directory where test stdout will be put */
     char redirect_path[CHILI_REDIRECT_MAX_PATH];
 };
@@ -121,6 +123,7 @@ static enum parsed_commandline _parse_args(int argc, char *argv[])
         { "interactive", no_argument,       0, 'i' },
         { "color",       no_argument,       0, 'c' },
         { "cursor",      no_argument,       0, 'm' },
+        { "nice",        no_argument,       0, 'n' },
         { "redirect",    required_argument, 0, 'r' },
         { "help",        no_argument,       0, 'h' },
     };
@@ -134,23 +137,26 @@ static enum parsed_commandline _parse_args(int argc, char *argv[])
                         long_options, &index);
         switch (c){
             case 'i':
-                _options.use_color = 1;
-                _options.use_cursor = 1;
-                _options.use_redirect = 1;
+                _options.use_color = true;
+                _options.use_cursor = true;
+                _options.use_redirect = true;
+                _options.nice_stats = true;
                 strcpy(_options.redirect_path, "./chili_log");
                 break;
             case 'c':
-                _options.use_color = 1;
+                _options.use_color = true;
                 break;
             case 'm':
-                _options.use_cursor = 1;
+                _options.use_cursor = true;
                 break;
+            case 'n':
+                _options.nice_stats = true;
             case 'r':
                 len = strlen(optarg);
                 if (len >= CHILI_REDIRECT_MAX_PATH){
                     return error_redirect_path_too_long;
                 }
-                _options.use_redirect = 1;
+                _options.use_redirect = true;
                 strcpy(_options.redirect_path, optarg);
                 break;
             case 'h':
@@ -214,6 +220,7 @@ int main(int argc, char *argv[])
     report.name = _options.suite_path;
     report.use_color = _options.use_color;
     report.use_cursor = _options.use_cursor;
+    report.nice_stats = _options.nice_stats;
 
     /* Initialize modules */
     r = chili_sym_begin(_options.suite_path, &symbol_count);

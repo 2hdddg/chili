@@ -56,7 +56,7 @@ def chili(options=[], print_stdout=False, print_stderr=False):
     return report
 
 def parse_report(result):
-    pattern = "Executed\ (\d*)\ tests,\ (\d*|all)\ (succeeded|failed|with errors)"
+    pattern = "Executed:\ (\d*)\,\ Succeeded:\ (\d*)\, Failed:\ (\d*)\, Errors:\ (\d*)"
     match = re.search(pattern, result.stdoutdata)
 
     if not match:
@@ -69,23 +69,10 @@ def parse_report(result):
                       num_executed=0, num_succeeded=0,
                       num_failed=0, num_errors=0)
 
-
-    num_succeeded = 0
-    num_failed = 0
-    num_errors = 0
     num_executed = int(match.group(1))
-    num_or_all = match.group(2)
-    outcome = match.group(3)
-
-    if outcome == 'succeeded':
-        num_succeeded = num_executed if num_or_all == 'all' else int(num_or_all)
-        num_failed = num_executed - num_succeeded
-    elif outcome == 'failed':
-        num_failed = num_executed if num_or_all == 'all' else int(num_or_all)
-        num_succeded = num_executed - num_failed
-    else:
-        num_errors = num_executed if num_or_all == 'all' else int(num_or_all)
-        # Missing parsing of nu_failed and num_succeeded
+    num_succeeded = int(match.group(2))
+    num_failed = int(match.group(3))
+    num_errors = int(match.group(4))
 
     return Report(process_return=result.returncode,
                   num_executed=num_executed,

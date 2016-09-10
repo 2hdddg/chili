@@ -8,28 +8,35 @@
 /* Globals */
 static struct chili_report *_report;
 
+
+const char *_stats = "%sExecuted: %d, Succeeded: %d, Failed: %d, Errors: %d%s\n";
+
+/* Nice stats */
 const char *_stats_nothing = "%sNo tests executed%s\n";
 const char *_stats_all_succeded = "%sExecuted %d tests, all succeeded%s\n";
 const char *_stats_all_failed = "%sExecuted %d tests, all failed%s\n";
 const char *_stats_all_errors = "%sExecuted %d tests, all with errors%s\n";
 const char *_stats_some_failed = "%sExecuted %d tests, %d failed%s\n";
 const char *_stats_some_failed_errors = "%sExecuted %d tests, "
-                                        "%d failed, %d errors%s\n";
+                                        "%d failed, %d succeeded, %d errors%s\n";
+/* Ansi escape codes for colors and stuff */
 const char *_color_headline_ansi = "\x1b[1m\x1b[34m";
 const char *_color_success_ansi = "\x1b[32m";
 const char *_color_fail_ansi = "\x1b[31;1m";
 const char *_color_reset_ansi = "\033[0m";
 
-/* Used in runtime */
+const char *_cursor_up = "\x1b[A";
+const char *_clear_to_end = "\x1b[K";
+
+/* Used at runtime, set to empty strings if colors
+ * are disabled */
 const char *_color_headline;
 const char *_color_success;
 const char *_color_fail;
 const char *_color_reset;
 
-const char *_cursor_up = "\x1b[A";
-const char *_clear_to_end = "\x1b[K";
 
-static void _print_stats(struct chili_aggregated *aggregated)
+static void _print_nice_stats(struct chili_aggregated *aggregated)
 {
     int fails = aggregated->num_failed;
     int errors = aggregated->num_errors;
@@ -58,9 +65,24 @@ static void _print_stats(struct chili_aggregated *aggregated)
         }
         else{
             printf(_stats_some_failed_errors, _color_fail,
-                total, fails, errors,  _color_reset);
+                total, fails, successes, errors,  _color_reset);
         }
     }
+}
+
+static void _print_stats(struct chili_aggregated *aggregated)
+{
+    if (_report->nice_stats){
+        _print_nice_stats(aggregated);
+        return;
+    }
+
+    const char *color = _color_success;
+
+    /* Simple stats */
+    printf(_stats, color, aggregated->num_total,
+          aggregated->num_succeeded, aggregated->num_failed,
+          aggregated->num_errors, _color_reset);
 }
 
 static void _print_failure(struct chili_result *result)
