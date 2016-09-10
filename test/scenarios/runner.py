@@ -56,7 +56,8 @@ def chili(options=[], print_stdout=False, print_stderr=False):
     return report
 
 def parse_report(result):
-    pattern = "Executed:\ (\d*)\,\ Succeeded:\ (\d*)\, Failed:\ (\d*)\, Errors:\ (\d*)"
+    pattern = ("Executed:\ (\d*)\,\ Succeeded:\ (\d*)\, "
+              "Failed:\ (\d*)\, Errors:\ (\d*)")
     match = re.search(pattern, result.stdoutdata)
 
     if not match:
