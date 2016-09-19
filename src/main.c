@@ -45,6 +45,16 @@ enum parsed_commandline {
 /* Globals */
 struct commandline_options _options;
 
+static bool _continue_testing(struct chili_result *result,
+                              struct chili_aggregated *aggregated)
+{
+    bool error_occured = result->before == fixture_error ||
+                         result->after == fixture_error ||
+                         result->test == test_error ||
+                         result->execution == execution_unknown_error;
+
+    return error_occured ? false : true;
+}
 
 static int _run_suite(const char *path,
                       struct chili_suite *suite,
@@ -86,12 +96,18 @@ static int _run_suite(const char *path,
          * < 0 if any of above encountered an error */
         r = chili_run_next(&result, aggregated, chili_report_test_begin);
 
-        if (r != 0){
-            /* Report even if success, failure or error */
-            chili_report_test(&result, aggregated);
+        if (r < 0){
+            /* Fatal error, can not continue */
+            break;
+        }
+        else if (r == 0){
+            /* Last test has already executed, no more */
+            break;
         }
 
-        if (r == 0 || r < 0) {
+        chili_report_test(&result, aggregated);
+
+        if (!_continue_testing(&result, aggregated)){
             break;
         }
     } while (true); /* Stop executing on error */

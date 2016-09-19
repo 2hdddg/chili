@@ -44,6 +44,13 @@ def test_stops_execution_on_test_teardown_2_error():
     one_succeeded = report.num_succeeded == 1
     return two_executed and one_error and one_succeeded
 
+def test_executes_all_tests_even_when_test_crashes():
+    report = chili(['./chili_crash.so'])
+
+    all_executed = report.num_executed == 2
+    all_errors = report.num_executed == report.num_errors
+    return all_executed and all_errors
+
 if __name__ == "__main__":
     sys.exit(run(globals().values(), __file__))
 

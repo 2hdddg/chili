@@ -9,6 +9,9 @@
 
 #include "redirect.h"
 
+/* Debugging */
+#define DEBUG 0
+#include "debug.h"
 
 /* Globals */
 static int _enabled;
@@ -30,6 +33,8 @@ static int _ensure_directory(const char *path)
     int created;
 
     if (stat(path, &st) < 0){
+        /* Path doesn't exist */
+        debug_print("Creating redirect directory %s\n", path);
         created = mkdir(path, 0777);
         if (created < 0){
             printf("Failed to create directory %s error %s\n",
@@ -39,6 +44,7 @@ static int _ensure_directory(const char *path)
     }
     else{
         /* Path exists */
+        debug_print("Redirect directory %s exists\n", path);
         is_dir = st.st_mode & S_IFDIR;
         if (!is_dir){
             printf("%s is not a directory.\n", path);
@@ -74,6 +80,7 @@ int chili_redirect_begin(int enable, const char *path)
 
     _enabled = enable;
     if (_enabled){
+        debug_print("Redirect is enabled\n");
         path_length = strlen(path);
         if (path_length >= CHILI_REDIRECT_MAX_PATH){
             return -1;
@@ -96,6 +103,9 @@ int chili_redirect_begin(int enable, const char *path)
         strncpy(_print_name, _stdout_name, path_length);
         _name_offset = path_length;
     }
+    else{
+        debug_print("Redirect is disabled\n");
+    }
 
     return 1;
 }
@@ -103,12 +113,14 @@ int chili_redirect_begin(int enable, const char *path)
 void chili_redirect_start(const char *name)
 {
     if (!_enabled){
-        return;
-    }
-    if (_build_path(_stdout_name, name) < 0){
+        /* Nothing to do, we don't wan't to redirect */
         return;
     }
 
+    if (_build_path(_stdout_name, name) < 0){
+        return;
+    }
+    debug_print("Redirecting to file %s\n", _stdout_name);
     _stdout_temp = creat(_stdout_name, S_IRUSR|S_IWUSR);
     if (_stdout_temp == -1){
         printf("Failed to create file %s due to %s\n",
@@ -133,9 +145,11 @@ void chili_redirect_stop()
     dup2(_stdout_copy, 1);
     close(_stdout_copy);
     _stdout_copy = 0;
+
+    debug_print("Stopped redirection\n");
 }
 
-void chili_redirect_print(const char *name, const char* before, 
+void chili_redirect_print(const char *name, const char* before,
                           const char* after)
 {
     int fd;

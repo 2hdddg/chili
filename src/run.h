@@ -4,20 +4,52 @@
 
 #include "suite.h"
 
+/* Initial state is uncertain.
+ *
+ * nothing_to_do - When no fixture function exists.
+ * error         - Fixture function executed and return < 0.
+ * success       - Fixture function executed and return >= 0.
+*/
+enum fixture_result {
+    fixture_uncertain,
+    fixture_not_needed,
+    fixture_error,
+    fixture_success
+};
+
+/* Initial state is uncertain.
+ *
+ * error   - Test function executed and returned < 0.
+ * failure - Test function executed and returned 0.
+ * success - Test function executed and returned > 0.
+*/
+enum test_result {
+    test_uncertain,
+    test_error,
+    test_failure,
+    test_success,
+};
+
+enum execution_result {
+    execution_not_started,
+    execution_unknown_error,
+    execution_crashed,
+    execution_timed_out,
+    execution_done,
+};
 
 /**
  * @brief Represents execution of a single test case
  *
  * Members contain name and result of execution of
- * test setup, the test itself and cleanup. The results
- * are < 0 if an error occured, 0 if failed, > 0 if
- * successful.
+ * test setup, the test itself and cleanup.
  */
 struct chili_result {
-    const char *name;
-    int before;
-    int test;
-    int after;
+    const char            *name;
+    enum execution_result execution;
+    enum fixture_result   before;
+    enum test_result      test;
+    enum fixture_result   after;
 };
 
 struct chili_aggregated {

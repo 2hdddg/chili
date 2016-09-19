@@ -77,7 +77,8 @@ static void _print_stats(struct chili_aggregated *aggregated)
         return;
     }
 
-    const char *color = _color_success;
+    const char *color = aggregated->num_errors || aggregated->num_failed ?
+        _color_fail : _color_success;
 
     /* Simple stats */
     printf(_stats, color, aggregated->num_total,
@@ -85,35 +86,81 @@ static void _print_stats(struct chili_aggregated *aggregated)
           aggregated->num_errors, _color_reset);
 }
 
-static void _print_failure(struct chili_result *result)
+static void _print_test(struct chili_result *result)
 {
-    printf("%sFailed:%s %s\n",
-        _color_fail, _color_reset, result->name);
+    bool print_captured_output = true;
 
-    chili_redirect_print(result->name,
-        ">>> Capture start\n",
-        "<<< Capture end\n");
+    if (result->before == fixture_error){
+        printf("%s%s: Test fixture setup error%s\n",
+               _color_fail, result->name, _color_reset);
+    }
+    else if (result->after == fixture_error){
+        printf("%s%s: Test fixture teardown error%s\n",
+               _color_fail, result->name, _color_reset);
+    }
+    else{
+        switch (result->test){
+            case test_uncertain:
+                printf("%s%s: Uncertain result%s\n",
+                       _color_fail, result->name, _color_reset);
+                break;
+            case test_error:
+                printf("%s%s: Error%s\n",
+                       _color_fail, result->name, _color_reset);
+                break;
+            case test_failure:
+                printf("%s%s: Failed%s\n",
+                       _color_fail, result->name, _color_reset);
+                break;
+            case test_success:
+                printf("%s%s: Success%s\n",
+                       _color_success, result->name, _color_reset);
+                print_captured_output = false;
+                break;
+        }
+    }
+
+    if (print_captured_output){
+        chili_redirect_print(result->name,
+            ">>> Capture start\n",
+            "<<< Capture end\n");
+    }
 }
 
-static void _print_error(struct chili_result *result)
+static void _print_result(struct chili_result *result)
 {
-    if (result->before < 0){
-        printf("%sError in test setup for %s%s\n",
-            _color_fail, result->name, _color_reset);
-    }
-    if (result->after < 0){
-        printf("%sError in test cleanup for%s%s\n",
-            _color_fail, result->name, _color_reset);
-    }
-    if (result->test < 0){
-        printf("%sError in test%s %s\n",
-            _color_fail, _color_reset, result->name);
+    bool print_captured_output = true;
+
+    switch (result->execution){
+        case execution_not_started:
+            printf("%s%s: Not started%s\n",
+                   _color_fail, result->name, _color_reset);
+            break;
+        case execution_unknown_error:
+            printf("%s%s: Unknown error%s\n",
+                   _color_fail, result->name, _color_reset);
+            break;
+        case execution_crashed:
+            printf("%s%s: Crashed%s\n",
+                   _color_fail, result->name, _color_reset);
+            break;
+        case execution_timed_out:
+            printf("%s%s: Timed out%s\n",
+                   _color_fail, result->name, _color_reset);
+            break;
+        case execution_done:
+            _print_test(result);
+            print_captured_output = false;
+            break;
     }
 
-    chili_redirect_print(result->name,
-        ">>> Capture start\n",
-        "<<< Capture end\n");
+    if (print_captured_output){
+        chili_redirect_print(result->name,
+            ">>> Capture start\n",
+            "<<< Capture end\n");
+    }
 }
+
 
 /* Exports */
 int chili_report_begin(struct chili_report *report)
@@ -175,11 +222,6 @@ Completed no failures
 void chili_report_test(struct chili_result *result,
                        struct chili_aggregated *aggregated)
 {
-    int failed = result->test == 0;
-    int error = result->before < 0 ||
-                result->test < 0 ||
-                result->after < 0;
-
     if (_report->use_cursor){
         /* Remove text shown while running test */
         printf("%s%s", _cursor_up, _clear_to_end);
@@ -187,22 +229,12 @@ void chili_report_test(struct chili_result *result,
         if (aggregated->num_total > 1){
             printf("%s%s", _cursor_up, _clear_to_end);
         }
-
-        if (failed){
-            _print_failure(result);
-        }
-        if (error){
-            _print_error(result);
-        }
-        _print_stats(aggregated);
     }
-    else{
-        if (failed){
-            _print_failure(result);
-        }
-        if (error){
-            _print_error(result);
-        }
+
+    _print_result(result);
+
+    if (_report->use_cursor){
+        _print_stats(aggregated);
     }
 }
 
