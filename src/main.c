@@ -56,15 +56,14 @@ static bool _continue_testing(struct chili_result *result,
     return error_occured ? false : true;
 }
 
-static int _run_suite(const char *path,
-                      struct chili_suite *suite,
-                      struct chili_report *report,
+static int _run_suite(struct chili_report *report,
                       struct chili_aggregated *aggregated)
 {
     int r;
     bool before_failed;
     bool after_failed;
     struct chili_result result;
+    struct chili_bind_test test;
 
     r = chili_redirect_begin(_options.use_redirect,
                              _options.redirect_path);
@@ -78,7 +77,7 @@ static int _run_suite(const char *path,
         return r;
     }
 
-    r = chili_run_begin(path, suite, &before_failed);
+    r = chili_run_begin(chili_bind_get_fixture(), &before_failed);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
@@ -94,14 +93,17 @@ static int _run_suite(const char *path,
         /*   0 if there were no more tests,
          * > 0 if setup, test and teardown ran without error,
          * < 0 if any of above encountered an error */
-        r = chili_run_next(&result, aggregated, chili_report_test_begin);
-
-        if (r < 0){
-            /* Fatal error, can not continue */
+        r = chili_bind_next_test(&test);
+        if (r <=0){
+            /* Fatal error, can not continue or last test
+             * has already executed, no more (0)  */
             break;
         }
-        else if (r == 0){
-            /* Last test has already executed, no more */
+
+        r = chili_run_next(&result, aggregated, &test,
+                           chili_report_test_begin);
+        if (r < 0){
+            /* Fatal error, can not continue */
             break;
         }
 
@@ -267,7 +269,12 @@ int main(int argc, char *argv[])
     } while (true);
 
     chili_suite_get(&suite);
-    r = _run_suite(_options.suite_path, suite, &report, &aggregated);
+    r = chili_bind_begin(_options.suite_path, suite);
+    if (r < 0){
+        goto cleanup_suite;
+    }
+    r = _run_suite(&report, &aggregated);
+    chili_bind_end();
 
 cleanup_suite:
     chili_suite_end();

@@ -15,8 +15,6 @@
 #include "debug.h"
 
 /* Types */
-typedef int (*func)(void);
-
 struct child_result {
     enum fixture_result  before;
     enum test_result     test;
@@ -25,35 +23,9 @@ struct child_result {
 
 
 /* Globals */
-static void *_libhandle;
-static struct chili_suite *_suite;
-static func _each_before = NULL;
-static func _each_after = NULL;
-static int _next = 0;
+static const struct chili_bind_fixture *_fixture;
 
-
-/* Invocation */
-static func _get_func(const char *name)
-{
-    func f;
-    *(void **)(&f) = dlsym(_libhandle, name);
-    if (f == NULL){
-        printf("Unable to dlsym %s\n", name);
-    }
-    return f;
-}
-
-static int _invoke_func(const char *name)
-{
-    func f = _get_func(name);
-
-    if (f == NULL){
-        return -1;
-    }
-
-    return f();
-}
-
+/* Locals */
 static void _empty_handler(int sig)
 {
 }
@@ -74,67 +46,7 @@ static int _signal_setup()
     return 0;
 }
 
-
-/* Exports */
-int chili_run_begin(const char *path,
-                    struct chili_suite *suite,
-                    bool *before_failed)
-{
-    int r = 0;
-    *before_failed = false;
-
-    _libhandle = dlopen(path, RTLD_LAZY);
-    if (_libhandle == NULL){
-        printf("Failed to load library %s due to %s\n",
-            path, dlerror());
-        r = -1;
-        goto onerror;
-    }
-
-    if (suite->once_before){
-        r = _invoke_func(suite->once_before);
-        if (r < 0){
-            *before_failed = true;
-            goto onerror;
-        }
-    }
-
-    if (suite->each_before){
-        _each_before = _get_func(suite->each_before);
-        if (_each_before == NULL){
-            goto onerror;
-        }
-    }
-    else {
-        _each_before = NULL;
-    }
-
-    if (suite->each_after){
-        _each_after = _get_func(suite->each_after);
-        if (_each_after == NULL){
-            goto onerror;
-        }
-    }
-    else {
-        _each_after = NULL;
-    }
-
-    _suite = suite;
-    _next = 0;
-
-    _signal_setup();
-
-    return 1;
-
-onerror:
-    if (_libhandle){
-        dlclose(_libhandle);
-        _libhandle = NULL;
-    }
-    return r;
-}
-
-static enum fixture_result evaluate_fixture(func fixture)
+static enum fixture_result evaluate_fixture(chili_func fixture)
 {
     if (fixture){
         return fixture() < 0 ?
@@ -145,7 +57,7 @@ static enum fixture_result evaluate_fixture(func fixture)
     }
 }
 
-static enum test_result evaluate_test(func test)
+static enum test_result evaluate_test(chili_func test)
 {
     int returned = test();
 
@@ -177,8 +89,10 @@ static void _aggregate(const struct chili_result *result,
     aggregated->num_succeeded += succeeded ? 1 : 0;
 }
 
-static int _child_write_result(func each_before, func test, func each_after,
-                                const char *name, int result_pipe)
+static int _child_write_result(chili_func each_before,
+                               chili_func test,
+                               chili_func each_after,
+                               const char *name, int result_pipe)
 {
     int written;
     struct child_result result = {
@@ -269,7 +183,9 @@ static void _me_read_result(struct chili_result *result,
     }
 }
 
-static int _fork_and_run(func each_before, func test, func each_after,
+static int _fork_and_run(chili_func each_before,
+                         chili_func test,
+                         chili_func each_after,
                          struct chili_result *result)
 {
     pid_t child;
@@ -314,23 +230,39 @@ static int _fork_and_run(func each_before, func test, func each_after,
     return 1;
 }
 
-int chili_run_next(struct chili_result *result,
-                   struct chili_aggregated *aggregated,
-                   chili_test_begin test_begin)
+/* Exports */
+int chili_run_begin(const struct chili_bind_fixture *fixture,
+                    bool *before_failed)
 {
-    func test;
-    int ret = 1;
+    int r;
 
-    /* End of tests */
-    if (_next >= _suite->count){
-        debug_print("No more tests\n");
-        return 0;
+    *before_failed = false;
+
+    if (fixture->once_before){
+        r = fixture->once_before();
+        if (r < 0){
+            *before_failed = true;
+            return r;
+        }
     }
 
+    _fixture = fixture;
+
+    _signal_setup();
+
+    return 1;
+}
+
+
+int chili_run_next(struct chili_result *result,
+                   struct chili_aggregated *aggregated,
+                   struct chili_bind_test *test,
+                   chili_test_begin test_begin)
+{
     result->execution = execution_not_started;
     result->before = result->after = fixture_uncertain;
     result->test = test_uncertain;
-    result->name = _suite->tests[_next];
+    result->name = test->name;
 
     debug_print("Preparing to run %s\n", result->name);
 
@@ -340,26 +272,14 @@ int chili_run_next(struct chili_result *result,
         test_begin(result->name);
     }
 
-    /* Prepare for next so we don't miss it */
-    _next++;
-
-    test = _get_func(result->name);
-    if (test == NULL){
-        printf("Unable to get test func %s\n", result->name);
-        ret = -1;
-        goto exit;
-    }
-
-    if (_fork_and_run(_each_before, test, _each_after,
-                     result) < 0){
-        ret = -1;
-        goto exit;
+    if (_fork_and_run(_fixture->each_before, test->func,
+                      _fixture->each_after, result) < 0){
+        return -1;
     };
 
     _aggregate(result, aggregated);
 
-exit:
-    return ret;
+    return 1;
 }
 
 int chili_run_end(bool *after_failed)
@@ -367,14 +287,9 @@ int chili_run_end(bool *after_failed)
     int r = 1;
     *after_failed = false;
 
-    if (_suite->once_after){
-        r = _invoke_func(_suite->once_after);
+    if (_fixture->once_after){
+        r = _fixture->once_after();
         *after_failed = r < 0;
-    }
-
-    if (_libhandle){
-        dlclose(_libhandle);
-        _libhandle = NULL;
     }
 
     return r;
