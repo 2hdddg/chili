@@ -43,10 +43,10 @@ $(OBJECTS): out/%.o: src/%.c
 # Generate dependency files in out dir.
 # Dependencies should be on the form:
 #   out/xx.d out/xx.o: xx.c xx.h yy.h
-$(DEPS): out/%.d: %.c
+$(DEPS): out/%.d: src/%.c
 	@mkdir -p out
 	@echo Analyzing dependencies for $<
-	@$(CC) -MM $(CPPFLAGS) -MT '$@ out/$(basename $<).o' $< > $@;
+	@$(CC) -MM $(CPPFLAGS) -MT '$@ $(basename $@).o' $< > $@;
 
 .PHONY: clean
 clean:
@@ -59,8 +59,13 @@ examples: FORCE chili
 	@echo Running examples
 	@$(MAKE) run -C examples
 
-tests: FORCE chili
+scenario_tests: FORCE chili
 	@$(MAKE) run -C test/scenarios/ --no-print-directory
+
+unit_tests: FORCE chili
+	@$(MAKE) run -C test/units/ --no-print-directory
+
+tests: FORCE chili unit_tests scenario_tests
 
 FORCE:
  

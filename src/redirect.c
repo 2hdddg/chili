@@ -149,6 +149,17 @@ void chili_redirect_stop()
     debug_print("Stopped redirection\n");
 }
 
+void _write(int fd, const char *buf, int size)
+{
+    int written;
+
+    written = write(1, buf, size);
+    if (written != size){
+        printf("IO error: wrote %d should have "
+               "written %d\n", written, size);
+    }
+}
+
 void chili_redirect_print(const char *name, const char* before,
                           const char* after)
 {
@@ -165,17 +176,17 @@ void chili_redirect_print(const char *name, const char* before,
     }
 
     if (before){
-        write(1, before, strlen(before));
+        _write(1, before, strlen(before));
     }
 
     fd = open(_print_name, O_RDONLY);
     while ((size = read(fd, buf, max)) > 0){
-        write(1, buf, size);
+        _write(1, buf, size);
     }
     close(fd);
 
     if (after){
-        write(1, after, strlen(after));
+        _write(1, after, strlen(after));
     }
 }
 

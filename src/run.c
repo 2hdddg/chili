@@ -235,7 +235,6 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
                     bool *before_failed)
 {
     int r;
-
     *before_failed = false;
 
     if (fixture->once_before){
@@ -252,7 +251,6 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
 
     return 1;
 }
-
 
 int chili_run_next(struct chili_result *result,
                    struct chili_aggregated *aggregated,

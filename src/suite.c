@@ -88,7 +88,7 @@ int chili_suite_begin(int max)
 
     tests = malloc(size);
     if (!tests){
-        printf("Unable to allocate: %s", strerror(errno));
+        printf("Unable to allocate: %s\n", strerror(errno));
         return -1;
     }
 

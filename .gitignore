@@ -1,5 +1,6 @@
 chili
 *.so
+*.o
 *.pyc
 out/
 cscope.out
