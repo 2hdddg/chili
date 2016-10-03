@@ -106,7 +106,6 @@ static int _child_write_result(chili_func each_before,
     chili_redirect_start(name);
 
     result.before = evaluate_fixture(each_before);
-
     if (result.before != fixture_error){
         result.test = evaluate_test(test);
         result.after = evaluate_fixture(each_after);

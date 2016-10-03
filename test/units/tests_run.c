@@ -97,6 +97,11 @@ int _timestamped_test()
     return 1;
 }
 
+int _succeeding_test()
+{
+    return 1;
+}
+
 void _timestamped_progress(const char* name)
 {
     clock_gettime(CLOCK_MONOTONIC_RAW, _progress_time);
@@ -119,7 +124,7 @@ bool _less_than(struct timespec *a, struct timespec *b)
 /* Verifies begin without any fixture.
  * Function should return zero or positive to
  * indicate success and flag should be false.
-*/
+ */
 int test_run_begin_empty_fixture()
 {
     int ret = chili_run_begin(&_fixture, &_before_failed);
@@ -132,7 +137,7 @@ int test_run_begin_empty_fixture()
  * fixture.
  * Function should return zero or positive to
  * indicate success and flag should be false.
-*/
+ */
 int test_run_begin_fixture_once_begin_succeeds()
 {
     _fixture.once_before = _succeeding_fixture;
@@ -148,7 +153,7 @@ int test_run_begin_fixture_once_begin_succeeds()
  * error in setup. Returned value should be
  * same as value returned from fixture and flag
  * should be set to true to indicate the failure.
-*/
+ */
 int test_run_begin_fixture_once_before_fails()
 {
     _fixture.once_before = _failing_fixture;
@@ -160,7 +165,7 @@ int test_run_begin_fixture_once_before_fails()
 /* Verifies end without any fixture.
  * Function should return zero or positive to
  * indicate success and flag should be false.
-*/
+ */
 int test_run_end_empty_fixture()
 {
     chili_run_begin(&_fixture, &_before_failed);
@@ -173,7 +178,7 @@ int test_run_end_empty_fixture()
  * fixture.
  * Function should return zero or positive to
  * indicate success and flag should be false.
-*/
+ */
 int test_run_end_fixture_once_after_succeeds()
 {
     _fixture.once_after = _succeeding_fixture;
@@ -189,7 +194,7 @@ int test_run_end_fixture_once_after_succeeds()
  * error in setup. Returned value should be
  * same as value returned from fixture and flag
  * should be set to true to indicate the failure.
-*/
+ */
 int test_run_end_fixture_once_after_fails()
 {
     _fixture.once_after = _failing_fixture;
@@ -201,7 +206,7 @@ int test_run_end_fixture_once_after_fails()
 
 /* Verifies that next calls start hook before
  * test fixture or test function
-*/
+ */
 int test_run_next_calls_progress_hook()
 {
     chili_run_begin(&_fixture, &_before_failed);
@@ -215,3 +220,74 @@ int test_run_next_calls_progress_hook()
            _less_than(_fixture_time, _test_time);
 }
 
+/* Verifies that before result is set to error
+ * when each_before returns error
+ */
+int test_run_next_result_before_fails()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _fixture.each_before = _failing_fixture;
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+
+    chili_run_end(&_after_failed);
+    return _result.before == fixture_error &&
+           _result.test == test_uncertain &&
+           _result.after == fixture_uncertain;
+}
+
+/* Verifies that aggregated num_errors is increased
+ * when each_before returns error
+ */
+int test_run_next_aggregated_before_fails()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _fixture.each_before = _failing_fixture;
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+
+    chili_run_end(&_after_failed);
+    return _aggregated.num_errors == 2 &&
+           _aggregated.num_succeeded == 0 &&
+           _aggregated.num_failed == 0 &&
+           _aggregated.num_total == 2;
+}
+
+/* Verifies that before result is set to error
+ * when each_after returns error
+ */
+int test_run_next_result_after_fails()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _fixture.each_after = _failing_fixture;
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+
+    chili_run_end(&_after_failed);
+    return _result.before == fixture_not_needed &&
+           _result.test == test_success &&
+           _result.after == fixture_error;
+}
+
+/* Verifies that aggregated num_errors is increased
+ * when each_after returns error
+ */
+int test_run_next_aggregated_after_fails()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _fixture.each_after = _failing_fixture;
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+
+    chili_run_end(&_after_failed);
+    return _aggregated.num_errors == 2 &&
+           _aggregated.num_succeeded == 0 &&
+           _aggregated.num_failed == 0 &&
+           _aggregated.num_total == 2;
+}
