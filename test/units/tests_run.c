@@ -102,6 +102,12 @@ static int _succeeding_test()
     return 1;
 }
 
+static int _crashing_test()
+{
+    *((int*)0) = 1;
+    return 1;
+}
+
 static int _failing_test()
 {
     return 0;
@@ -465,4 +471,55 @@ int test_run_next_aggregated_misc()
            _aggregated.num_succeeded == 2 &&
            _aggregated.num_failed == 3 &&
            _aggregated.num_total == 6;
+}
+
+/* Verifies result when test crashes.
+ */
+int test_run_next_crash()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+
+    _test.func = _crashing_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_result(&_result);
+    return _result.before == fixture_uncertain &&
+           _result.test == test_uncertain &&
+           _result.after == fixture_uncertain &&
+           _result.execution == execution_crashed;
+}
+
+/* Verifies that tests continue to run after crash.
+ */
+int test_run_next_continues_after_crash()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+
+    _test.func = _crashing_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    _test.func = _succeeding_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_result(&_result);
+    return _result.test == test_success &&
+           _result.execution == execution_done;
+}
+
+/* Verifies aggregated after crash.
+ */
+int test_run_next_aggregated_after_crash()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+
+    _test.func = _crashing_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_aggregated(&_aggregated);
+    return _aggregated.num_errors == 1 &&
+           _aggregated.num_succeeded == 0 &&
+           _aggregated.num_failed == 0 &&
+           _aggregated.num_total == 1;
 }
