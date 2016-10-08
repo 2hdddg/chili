@@ -163,6 +163,8 @@ static const char* _test_str(enum test_result r)
         return "test_failure";
     case test_success:
         return "test_success";
+    default:
+        return "unknown";
     }
 }
 
@@ -369,7 +371,9 @@ int test_run_next_aggregated_after_fails()
     _test.func = _succeeding_test;
 
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+    _print_result(&_result);
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+    _print_result(&_result);
 
     chili_run_end(&_after_failed);
     _print_aggregated(&_aggregated);
@@ -390,6 +394,7 @@ int test_run_next_result_after_all_successes()
     _test.func = _succeeding_test;
 
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+    _print_result(&_result);
 
     chili_run_end(&_after_failed);
     return _result.before == fixture_success &&
@@ -408,7 +413,6 @@ int test_run_next_result_success()
 
     chili_run_next(&_result, &_aggregated, &_test, _progress);
     _print_result(&_result);
-    chili_run_next(&_result, &_aggregated, &_test, _progress);
 
     chili_run_end(&_after_failed);
     _print_result(&_result);
@@ -436,7 +440,6 @@ int test_run_next_result_failure()
            _result.execution == execution_done;
 }
 
-#if 0
 /* Verifies aggregated when a bunch of
  * succesful, a bunch of failing and a
  * bunch of tests with errors are executed.
@@ -447,9 +450,7 @@ int test_run_next_aggregated_misc()
 
     _test.func = _succeeding_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);
-    _print_result(&_result);
     chili_run_next(&_result, &_aggregated, &_test, _progress);
-    _print_result(&_result);
     _test.func = _failing_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -463,6 +464,5 @@ int test_run_next_aggregated_misc()
     return _aggregated.num_errors == 1 &&
            _aggregated.num_succeeded == 2 &&
            _aggregated.num_failed == 3 &&
-           _aggregated.num_total == 5;
+           _aggregated.num_total == 6;
 }
-#endif
