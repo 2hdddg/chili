@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <signal.h>
 
 #include "symbols.h"
 #include "suite.h"

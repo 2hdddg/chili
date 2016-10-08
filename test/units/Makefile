@@ -6,7 +6,7 @@ SOURCES=$(wildcard ../../src/*.c)
 OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
-CHILI=../../chili
+CHILI=../../chili -i
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG -g

@@ -26,20 +26,21 @@ struct child_result {
 static const struct chili_bind_fixture *_fixture;
 
 /* Locals */
-static void _empty_handler(int sig)
+
+static void _sigchld_handler(int sig, siginfo_t *info, void* context)
 {
+    debug_print("Received signal %d in process %d "
+                "from process %d\n", sig, getpid(), info->si_pid);
 }
 
 static int _signal_setup()
 {
     struct sigaction action = {
-            .sa_handler = _empty_handler,
-            .sa_flags = 0
+            .sa_sigaction = _sigchld_handler,
+            .sa_flags = SA_SIGINFO
         };
 
-
-    /* Add empty signal handler to make sure we get
-     * the signal when we want to */
+    /* Set blocked signals while handling */
     sigemptyset(&action.sa_mask);
     sigaction(SIGCHLD, &action, NULL);
 
@@ -101,6 +102,8 @@ static int _child_write_result(chili_func each_before,
         .after  = fixture_uncertain,
     };
 
+    debug_print("In child preparing to execute test\n");
+
     /* Everything written to stdout in tests might be
      * redirected somewhere else */
     chili_redirect_start(name);
@@ -153,6 +156,7 @@ static void _me_read_result(struct chili_result *result,
         }
         else{
             /* This is the "normal" scenario */
+            debug_print("Received result from child process\n");
             result->execution = execution_done;
             result->before = from_child.before;
             result->test = from_child.test;
@@ -170,11 +174,14 @@ static void _me_read_result(struct chili_result *result,
             /* Got signal while waiting, until we expect
              * anything but SIGCHILD we can assume that
              * the child crashed before it wrote anything */
+            debug_print("Child process crashed during "
+                        "test in process %d\n", getpid());
             result->execution = execution_crashed;
             wait(&status);
         }
         else{
             /* Got an error */
+            debug_print("Error while waiting for test to complete\n");
             result->execution = execution_unknown_error;
             /* Child is still running at this point,
              * kill it ? */
@@ -190,7 +197,6 @@ static int _fork_and_run(chili_func each_before,
     pid_t child;
     int pipes[2];
     sigset_t blocked_signals;
-    sigset_t original_signals;
 
     if (pipe(pipes) < 0){
         printf("Failed to create pipe: %s\n", strerror(errno));
@@ -202,7 +208,7 @@ static int _fork_and_run(chili_func each_before,
      * notice it */
     sigemptyset(&blocked_signals);
     sigaddset(&blocked_signals, SIGCHLD);
-    sigprocmask(SIG_BLOCK, &blocked_signals, &original_signals);
+    sigprocmask(SIG_BLOCK, &blocked_signals, NULL);
 
     child = fork();
     if (child < 0){
@@ -213,10 +219,12 @@ static int _fork_and_run(chili_func each_before,
     if (child == 0){
         _child_write_result(each_before, test, each_after, result->name, pipes[1]);
         /* Exit child here ! */
+        debug_print("Exiting process %d\n", getpid());
         _exit(0);
     }
 
     /* Continue in parent process */
+    debug_print("Waiting for child process %d to execute test\n", child);
     _me_read_result(result, pipes[0]);
     close(pipes[0]);
     close(pipes[1]);
@@ -224,7 +232,7 @@ static int _fork_and_run(chili_func each_before,
     /* Restore signals, there is probably a SIGCHLD
      * pending at this moment from this test and we
      * don't want that signal next round ! */
-    sigprocmask(SIG_SETMASK, &original_signals, NULL);
+    sigprocmask(SIG_UNBLOCK, &blocked_signals, NULL);
 
     return 1;
 }

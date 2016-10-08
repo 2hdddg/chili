@@ -73,41 +73,55 @@ int before_each()
     return 1;
 }
 
-int _failing_fixture()
+static int _failing_fixture()
 {
     _called_failing_fixture++;
     return -666;
 }
 
-int _succeeding_fixture()
+static int _succeeding_fixture()
 {
     _called_succeeding_fixture++;
     return 1;
 }
 
-int _timestamped_fixture()
+static int _timestamped_fixture()
 {
     clock_gettime(CLOCK_MONOTONIC_RAW, _fixture_time);
     return 1;
 }
 
-int _timestamped_test()
+static int _timestamped_test()
 {
     clock_gettime(CLOCK_MONOTONIC_RAW, _test_time);
     return 1;
 }
 
-int _succeeding_test()
+static int _succeeding_test()
 {
     return 1;
 }
 
-void _timestamped_progress(const char* name)
+static int _failing_test()
+{
+    return 0;
+}
+
+static int _errounous_test()
+{
+    return -1;
+}
+
+static void _timestamped_progress(const char *name)
 {
     clock_gettime(CLOCK_MONOTONIC_RAW, _progress_time);
 }
 
-bool _less_than(struct timespec *a, struct timespec *b)
+static void _progress(const char *name)
+{
+}
+
+static bool _less_than(struct timespec *a, struct timespec *b)
 {
     if (a->tv_sec < b->tv_sec){
         return true;
@@ -120,6 +134,74 @@ bool _less_than(struct timespec *a, struct timespec *b)
     return false;
 }
 
+static const char* _execution_str(enum execution_result e)
+{
+    switch (e){
+    case execution_not_started:
+        return "execution_not_started";
+    case execution_unknown_error:
+        return "execution_unknown_error";
+    case execution_crashed:
+        return "execution_crashed";
+    case execution_timed_out:
+        return "execution_timed_out";
+    case execution_done:
+        return "execution_done";
+    default:
+        return "unknown";
+    }
+}
+
+static const char* _test_str(enum test_result r)
+{
+    switch (r){
+    case test_uncertain:
+        return "test_uncertain";
+    case test_error:
+        return "test_error";
+    case test_failure:
+        return "test_failure";
+    case test_success:
+        return "test_success";
+    }
+}
+
+static const char* _fixture_str(enum fixture_result f)
+{
+    switch (f){
+    case fixture_uncertain:
+        return "fixture_uncertain";
+    case fixture_not_needed:
+        return "fixture_not_needed";
+    case fixture_error:
+        return "fixture_error";
+    case fixture_success:
+        return "fixture_success";
+    default:
+        return "unknown";
+    }
+}
+
+static void _print_result(const struct chili_result *r)
+{
+    printf("chili_result:\n"
+           "\texecution: %s\n"
+           "\tbefore: %s\n"
+           "\ttest: %s\n"
+           "\tafter: %s\n",
+           _execution_str(r->execution), _fixture_str(r->before),
+           _test_str(r->test), _fixture_str(r->after));
+}
+
+static void _print_aggregated(const struct chili_aggregated *a)
+{
+    printf("chili_aggregated:\n"
+           "\tnum_succeeded: %d\n"
+           "\tnum_failed: %d\n"
+           "\tnum_errors: %d\n"
+           "\tnum_total: %d\n",
+           a->num_succeeded, a->num_failed, a->num_errors, a->num_total);
+}
 
 /* Verifies begin without any fixture.
  * Function should return zero or positive to
@@ -220,8 +302,8 @@ int test_run_next_calls_progress_hook()
            _less_than(_fixture_time, _test_time);
 }
 
-/* Verifies that before result is set to error
- * when each_before returns error
+/* Verifies result when before fixture
+ * returns error.
  */
 int test_run_next_result_before_fails()
 {
@@ -234,11 +316,12 @@ int test_run_next_result_before_fails()
     chili_run_end(&_after_failed);
     return _result.before == fixture_error &&
            _result.test == test_uncertain &&
-           _result.after == fixture_uncertain;
+           _result.after == fixture_uncertain &&
+           _result.execution == execution_done;
 }
 
-/* Verifies that aggregated num_errors is increased
- * when each_before returns error
+/* Verifies aggregated when before
+ * fixture returns error.
  */
 int test_run_next_aggregated_before_fails()
 {
@@ -250,14 +333,15 @@ int test_run_next_aggregated_before_fails()
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
 
     chili_run_end(&_after_failed);
+    _print_aggregated(&_aggregated);
     return _aggregated.num_errors == 2 &&
            _aggregated.num_succeeded == 0 &&
            _aggregated.num_failed == 0 &&
            _aggregated.num_total == 2;
 }
 
-/* Verifies that before result is set to error
- * when each_after returns error
+/* Verifies result when after fixture
+ * returns error
  */
 int test_run_next_result_after_fails()
 {
@@ -268,13 +352,15 @@ int test_run_next_result_after_fails()
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
 
     chili_run_end(&_after_failed);
+    _print_aggregated(&_aggregated);
     return _result.before == fixture_not_needed &&
            _result.test == test_success &&
-           _result.after == fixture_error;
+           _result.after == fixture_error &&
+           _result.execution == execution_done;
 }
 
-/* Verifies that aggregated num_errors is increased
- * when each_after returns error
+/* Verifies aggregated when after
+ * fixture returns error
  */
 int test_run_next_aggregated_after_fails()
 {
@@ -286,8 +372,97 @@ int test_run_next_aggregated_after_fails()
     chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
 
     chili_run_end(&_after_failed);
+    _print_aggregated(&_aggregated);
     return _aggregated.num_errors == 2 &&
            _aggregated.num_succeeded == 0 &&
            _aggregated.num_failed == 0 &&
            _aggregated.num_total == 2;
 }
+
+/* Verifies result when there is a before and
+ * after fixture and everything runs fine.
+ */
+int test_run_next_result_after_all_successes()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _fixture.each_before = _succeeding_fixture;
+    _fixture.each_after = _succeeding_fixture;
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _timestamped_progress);
+
+    chili_run_end(&_after_failed);
+    return _result.before == fixture_success &&
+           _result.test == test_success &&
+           _result.after == fixture_success &&
+           _result.execution == execution_done;
+}
+
+/* Verifies result when no fixture
+ * but a successful test.
+ */
+int test_run_next_result_success()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _test.func = _succeeding_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    _print_result(&_result);
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_result(&_result);
+    return _result.before == fixture_not_needed &&
+           _result.test == test_success &&
+           _result.after == fixture_not_needed &&
+           _result.execution == execution_done;
+}
+
+/* Verifies result when no fixture
+ * but a failing test.
+ */
+int test_run_next_result_failure()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+    _test.func = _failing_test;
+
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_result(&_result);
+    return _result.before == fixture_not_needed &&
+           _result.test == test_failure &&
+           _result.after == fixture_not_needed &&
+           _result.execution == execution_done;
+}
+
+#if 0
+/* Verifies aggregated when a bunch of
+ * succesful, a bunch of failing and a
+ * bunch of tests with errors are executed.
+ */
+int test_run_next_aggregated_misc()
+{
+    chili_run_begin(&_fixture, &_before_failed);
+
+    _test.func = _succeeding_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    _print_result(&_result);
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    _print_result(&_result);
+    _test.func = _failing_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+    _print_result(&_result);
+    _test.func = _errounous_test;
+    chili_run_next(&_result, &_aggregated, &_test, _progress);
+
+    chili_run_end(&_after_failed);
+    _print_aggregated(&_aggregated);
+    return _aggregated.num_errors == 1 &&
+           _aggregated.num_succeeded == 2 &&
+           _aggregated.num_failed == 3 &&
+           _aggregated.num_total == 5;
+}
+#endif
