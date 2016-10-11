@@ -8,6 +8,7 @@
 
 
 struct chili_bind_fixture _fixture;
+struct chili_times _times;
 bool _before_failed;
 bool _after_failed;
 int _called_failing_fixture;
@@ -58,9 +59,10 @@ int once_after()
     return 1;
 }
 
-int before_each()
+int each_before()
 {
     memset(&_fixture, 0, sizeof(_fixture));
+    memset(&_times, 0, sizeof(_times));
     memset(&_result, 0, sizeof(_result));
     memset(&_aggregated, 0, sizeof(_aggregated));
     memset(&_test, 0, sizeof(_test));
@@ -70,6 +72,9 @@ int before_each()
     _before_failed = false;
     _after_failed = false;
     _called_failing_fixture = 0;
+    _times.timeout.tv_sec = 10;
+    _times.timeout.tv_nsec = 0;
+
     return 1;
 }
 
@@ -217,7 +222,7 @@ static void _print_aggregated(const struct chili_aggregated *a)
  */
 int test_run_begin_empty_fixture()
 {
-    int ret = chili_run_begin(&_fixture, &_before_failed);
+    int ret = chili_run_begin(&_fixture, &_times, &_before_failed);
     chili_run_end(&_after_failed);
 
     return ret >= 0 && !_before_failed;
@@ -231,7 +236,7 @@ int test_run_begin_empty_fixture()
 int test_run_begin_fixture_once_begin_succeeds()
 {
     _fixture.once_before = _succeeding_fixture;
-    int ret = chili_run_begin(&_fixture, &_before_failed);
+    int ret = chili_run_begin(&_fixture, &_times, &_before_failed);
     chili_run_end(&_after_failed);
 
     return ret >= 0 && _called_succeeding_fixture == 1 && !_before_failed;
@@ -247,7 +252,7 @@ int test_run_begin_fixture_once_begin_succeeds()
 int test_run_begin_fixture_once_before_fails()
 {
     _fixture.once_before = _failing_fixture;
-    int ret = chili_run_begin(&_fixture, &_before_failed);
+    int ret = chili_run_begin(&_fixture, &_times, &_before_failed);
 
     return ret == -666 && _called_failing_fixture == 1 && _before_failed;
 }
@@ -258,7 +263,7 @@ int test_run_begin_fixture_once_before_fails()
  */
 int test_run_end_empty_fixture()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     int ret = chili_run_end(&_after_failed);
 
     return ret >= 0 && !_after_failed;
@@ -272,7 +277,7 @@ int test_run_end_empty_fixture()
 int test_run_end_fixture_once_after_succeeds()
 {
     _fixture.once_after = _succeeding_fixture;
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     int ret = chili_run_end(&_after_failed);
 
     return ret >= 0 && _called_succeeding_fixture == 1 && !_after_failed;
@@ -288,7 +293,7 @@ int test_run_end_fixture_once_after_succeeds()
 int test_run_end_fixture_once_after_fails()
 {
     _fixture.once_after = _failing_fixture;
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     int ret = chili_run_end(&_after_failed);
 
     return ret == -666 && _called_failing_fixture == 1 && _after_failed;
@@ -299,7 +304,7 @@ int test_run_end_fixture_once_after_fails()
  */
 int test_run_next_calls_progress_hook()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_before = _timestamped_fixture;
     _test.func = _timestamped_test;
 
@@ -315,7 +320,7 @@ int test_run_next_calls_progress_hook()
  */
 int test_run_next_result_before_fails()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_before = _failing_fixture;
     _test.func = _succeeding_test;
 
@@ -333,7 +338,7 @@ int test_run_next_result_before_fails()
  */
 int test_run_next_aggregated_before_fails()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_before = _failing_fixture;
     _test.func = _succeeding_test;
 
@@ -353,7 +358,7 @@ int test_run_next_aggregated_before_fails()
  */
 int test_run_next_result_after_fails()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_after = _failing_fixture;
     _test.func = _succeeding_test;
 
@@ -372,7 +377,7 @@ int test_run_next_result_after_fails()
  */
 int test_run_next_aggregated_after_fails()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_after = _failing_fixture;
     _test.func = _succeeding_test;
 
@@ -394,7 +399,7 @@ int test_run_next_aggregated_after_fails()
  */
 int test_run_next_result_after_all_successes()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _fixture.each_before = _succeeding_fixture;
     _fixture.each_after = _succeeding_fixture;
     _test.func = _succeeding_test;
@@ -414,7 +419,7 @@ int test_run_next_result_after_all_successes()
  */
 int test_run_next_result_success()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _test.func = _succeeding_test;
 
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -433,7 +438,7 @@ int test_run_next_result_success()
  */
 int test_run_next_result_failure()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
     _test.func = _failing_test;
 
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -452,7 +457,7 @@ int test_run_next_result_failure()
  */
 int test_run_next_aggregated_misc()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
 
     _test.func = _succeeding_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -477,7 +482,7 @@ int test_run_next_aggregated_misc()
  */
 int test_run_next_crash()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
 
     _test.func = _crashing_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -494,7 +499,7 @@ int test_run_next_crash()
  */
 int test_run_next_continues_after_crash()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
 
     _test.func = _crashing_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);
@@ -511,7 +516,7 @@ int test_run_next_continues_after_crash()
  */
 int test_run_next_aggregated_after_crash()
 {
-    chili_run_begin(&_fixture, &_before_failed);
+    chili_run_begin(&_fixture, &_times, &_before_failed);
 
     _test.func = _crashing_test;
     chili_run_next(&_result, &_aggregated, &_test, _progress);

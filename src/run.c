@@ -24,9 +24,9 @@ struct child_result {
 
 /* Globals */
 static const struct chili_bind_fixture *_fixture;
+static const struct chili_times        *_times;
 
 /* Locals */
-
 static void _sigchld_handler(int sig, siginfo_t *info, void* context)
 {
     debug_print("Received signal %d in process %d "
@@ -130,7 +130,6 @@ static void _me_read_result(struct chili_result *result,
                             int result_pipe)
 {
     fd_set readset;
-    struct timespec timeout;
     sigset_t emptyset;
     int selected;
     int status;
@@ -139,12 +138,10 @@ static void _me_read_result(struct chili_result *result,
 
     FD_ZERO(&readset);
     FD_SET(result_pipe, &readset);
-    timeout.tv_sec = 10;
-    timeout.tv_nsec = 0;
     sigemptyset(&emptyset);
 
     selected = pselect(result_pipe + 1, &readset, NULL, NULL,
-                       &timeout, &emptyset);
+                       &_times->timeout, &emptyset);
     if (selected > 0){
         received = read(result_pipe, &from_child, sizeof(from_child));
         /* Should be safe to wait here since the child exits
@@ -166,6 +163,7 @@ static void _me_read_result(struct chili_result *result,
     else if (selected == 0){
         /* Timeout */
         result->execution = execution_timed_out;
+        debug_print("Timeout while waiting for child process\n");
         /* Child is still running at this point,
          * kill it ? */
     }
@@ -239,6 +237,7 @@ static int _fork_and_run(chili_func each_before,
 
 /* Exports */
 int chili_run_begin(const struct chili_bind_fixture *fixture,
+                    const struct chili_times *times,
                     bool *before_failed)
 {
     int r;
@@ -253,6 +252,7 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
     }
 
     _fixture = fixture;
+    _times = times;
 
     _signal_setup();
 

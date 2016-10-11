@@ -65,6 +65,10 @@ static int _run_suite(struct chili_report *report,
     bool after_failed;
     struct chili_result result;
     struct chili_bind_test test;
+    struct chili_times times;
+
+    times.timeout.tv_nsec = 0;
+    times.timeout.tv_sec = 10;
 
     r = chili_redirect_begin(_options.use_redirect,
                              _options.redirect_path);
@@ -78,7 +82,8 @@ static int _run_suite(struct chili_report *report,
         return r;
     }
 
-    r = chili_run_begin(chili_bind_get_fixture(), &before_failed);
+    r = chili_run_begin(chili_bind_get_fixture(),
+                        &times, &before_failed);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */

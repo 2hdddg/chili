@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <sys/time.h>
 
 #include "bind.h"
 
@@ -63,13 +64,24 @@ struct chili_aggregated {
     int num_total;
 };
 
+struct chili_times {
+    struct timespec timeout;
+    struct timespec progress_tick;
+};
+
 typedef void (*chili_test_begin)(const char*);
 
 /**
  * @brief Initializes module.
  *
- * Applies fixture.
+ * Applies fixture. Pointers to data should be kept alive by caller
+ * until chili_run_end is called.
  *
+ * @param fixture       Set of functions to call when suite is setup,
+ *                      cleaned up and also functions to call before
+ *                      each test and after each test.
+ * @param times         Timing configurations used when tests and
+ *                      fixtures are executed.
  * @param before_failed Is set to true when suite setup fails.
  *                      When true, the return value is the
  *                      return value from the failed setup
@@ -77,6 +89,7 @@ typedef void (*chili_test_begin)(const char*);
  * @return Negative on error, positive on success.
  */
 int chili_run_begin(const struct chili_bind_fixture *fixture,
+                    const struct chili_times *times,
                     bool *before_failed);
 
 /**
