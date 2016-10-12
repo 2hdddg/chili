@@ -83,7 +83,7 @@ static int _run_suite(struct chili_report *report,
     }
 
     r = chili_run_begin(chili_bind_get_fixture(),
-                        &times, &before_failed);
+                        &before_failed);
     if (r < 0){
         /* Tests arent safe to run when
          * initialization failed */
@@ -107,7 +107,7 @@ static int _run_suite(struct chili_report *report,
         }
 
         r = chili_run_next(&result, aggregated, &test,
-                           chili_report_test_begin);
+                           &times, chili_report_test_begin);
         if (r < 0){
             /* Fatal error, can not continue */
             break;

@@ -80,8 +80,6 @@ typedef void (*chili_test_begin)(const char*);
  * @param fixture       Set of functions to call when suite is setup,
  *                      cleaned up and also functions to call before
  *                      each test and after each test.
- * @param times         Timing configurations used when tests and
- *                      fixtures are executed.
  * @param before_failed Is set to true when suite setup fails.
  *                      When true, the return value is the
  *                      return value from the failed setup
@@ -89,7 +87,6 @@ typedef void (*chili_test_begin)(const char*);
  * @return Negative on error, positive on success.
  */
 int chili_run_begin(const struct chili_bind_fixture *fixture,
-                    const struct chili_times *times,
                     bool *before_failed);
 
 /**
@@ -97,6 +94,8 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
  *
  * Will invoke next test in the suite. Applies fixtures.
  *
+ * @param times         Timing configurations used when tests and
+ *                      fixtures are executed.
  * @return Negative on error, positive on success.
  *         Success doesnt mean that the test succeeded only
  *         that no errors occured.
@@ -104,6 +103,7 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
 int chili_run_next(struct chili_result *result,
                    struct chili_aggregated *aggregated,
                    struct chili_bind_test *test,
+                   const struct chili_times *times,
                    chili_test_begin test_begin);
 
 /**

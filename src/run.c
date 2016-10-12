@@ -24,7 +24,6 @@ struct child_result {
 
 /* Globals */
 static const struct chili_bind_fixture *_fixture;
-static const struct chili_times        *_times;
 
 /* Locals */
 static void _sigchld_handler(int sig, siginfo_t *info, void* context)
@@ -127,6 +126,7 @@ static int _child_write_result(chili_func each_before,
 }
 
 static void _me_read_result(struct chili_result *result,
+                            const struct chili_times *times,
                             int result_pipe)
 {
     fd_set readset;
@@ -141,7 +141,7 @@ static void _me_read_result(struct chili_result *result,
     sigemptyset(&emptyset);
 
     selected = pselect(result_pipe + 1, &readset, NULL, NULL,
-                       &_times->timeout, &emptyset);
+                       &times->timeout, &emptyset);
     if (selected > 0){
         received = read(result_pipe, &from_child, sizeof(from_child));
         /* Should be safe to wait here since the child exits
@@ -190,7 +190,8 @@ static void _me_read_result(struct chili_result *result,
 static int _fork_and_run(chili_func each_before,
                          chili_func test,
                          chili_func each_after,
-                         struct chili_result *result)
+                         struct chili_result *result,
+                         const struct chili_times *times)
 {
     pid_t child;
     int pipes[2];
@@ -223,7 +224,7 @@ static int _fork_and_run(chili_func each_before,
 
     /* Continue in parent process */
     debug_print("Waiting for child process %d to execute test\n", child);
-    _me_read_result(result, pipes[0]);
+    _me_read_result(result, times, pipes[0]);
     close(pipes[0]);
     close(pipes[1]);
 
@@ -237,7 +238,6 @@ static int _fork_and_run(chili_func each_before,
 
 /* Exports */
 int chili_run_begin(const struct chili_bind_fixture *fixture,
-                    const struct chili_times *times,
                     bool *before_failed)
 {
     int r;
@@ -252,7 +252,6 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
     }
 
     _fixture = fixture;
-    _times = times;
 
     _signal_setup();
 
@@ -262,6 +261,7 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
 int chili_run_next(struct chili_result *result,
                    struct chili_aggregated *aggregated,
                    struct chili_bind_test *test,
+                   const struct chili_times *times,
                    chili_test_begin test_begin)
 {
     result->execution = execution_not_started;
@@ -278,7 +278,7 @@ int chili_run_next(struct chili_result *result,
     }
 
     if (_fork_and_run(_fixture->each_before, test->func,
-                      _fixture->each_after, result) < 0){
+                      _fixture->each_after, result, times) < 0){
         return -1;
     };
 
