@@ -132,7 +132,6 @@ static void _me_read_result(struct chili_result *result,
     fd_set readset;
     sigset_t emptyset;
     int selected;
-    int status;
     struct child_result from_child;
     int received;
 
@@ -144,9 +143,6 @@ static void _me_read_result(struct chili_result *result,
                        &times->timeout, &emptyset);
     if (selected > 0){
         received = read(result_pipe, &from_child, sizeof(from_child));
-        /* Should be safe to wait here since the child exits
-         * right after writing */
-        wait(&status);
         if (received != sizeof(from_child)){
             printf("Read wrong number of bytes from child\n");
             result->execution = execution_unknown_error;
@@ -164,8 +160,7 @@ static void _me_read_result(struct chili_result *result,
         /* Timeout */
         result->execution = execution_timed_out;
         debug_print("Timeout while waiting for child process\n");
-        /* Child is still running at this point,
-         * kill it ? */
+        /* Child is still running at this point. */
     }
     else{
         if (errno == EINTR){
@@ -175,14 +170,12 @@ static void _me_read_result(struct chili_result *result,
             debug_print("Child process crashed during "
                         "test in process %d\n", getpid());
             result->execution = execution_crashed;
-            wait(&status);
         }
         else{
             /* Got an error */
             debug_print("Error while waiting for test to complete\n");
             result->execution = execution_unknown_error;
             /* Child is still running at this point,
-             * kill it ? */
         }
     }
 }
@@ -196,6 +189,7 @@ static int _fork_and_run(chili_func each_before,
     pid_t child;
     int pipes[2];
     sigset_t blocked_signals;
+    int status;
 
     if (pipe(pipes) < 0){
         printf("Failed to create pipe: %s\n", strerror(errno));
@@ -227,6 +221,22 @@ static int _fork_and_run(chili_func each_before,
     _me_read_result(result, times, pipes[0]);
     close(pipes[0]);
     close(pipes[1]);
+
+    if (result->execution == execution_timed_out ||
+        result->execution == execution_unknown_error){
+        /* Child is still running, shoot it down */
+        if (kill(child, SIGKILL) < 0){
+            printf("Failed to kill timed out child process\n");
+            /* Restore signals and bail out, not safe to wait 
+               or continue testing
+             */
+            sigprocmask(SIG_UNBLOCK, &blocked_signals, NULL);
+            return -1;
+        }
+    }
+
+    /* Child either exited normally or killed by code above */
+    wait(&status);
 
     /* Restore signals, there is probably a SIGCHLD
      * pending at this moment from this test and we

@@ -575,7 +575,7 @@ int test_run_next_continues_after_timeout()
            _result.execution == execution_done;
 }
 
-/* Verifies aggregated after crash.
+/* Verifies aggregated after timeout.
  */
 int test_run_next_aggregated_after_timeout()
 {
