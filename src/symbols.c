@@ -257,6 +257,18 @@ int chili_sym_begin(const char *path, int *count)
     char *map = NULL;
     int i;
     int found_dynsym = 0;
+    struct stat path_stat;
+
+    /* Check what path points to */
+    if (stat(path, &path_stat) < 0){
+        printf("Failed to stat path %s: %s\n",
+               path, strerror(errno));
+        goto onerror;
+    }
+    if (!S_ISREG(path_stat.st_mode)){
+        printf("%s is not a regular file\n", path);
+        goto onerror;
+    }
 
     /* Open shared library file */
     fd = open(path, O_RDONLY);

@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 /* No guard by design */
 #define debug_print(fmt, ...) \
     do { \

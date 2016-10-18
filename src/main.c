@@ -4,140 +4,51 @@
 #include <stdbool.h>
 #include <signal.h>
 
-#include "symbols.h"
-#include "suite.h"
-#include "run.h"
-#include "redirect.h"
-#include "report.h"
+#include "command.h"
 
 /* Debugging */
 #define DEBUG 0
 #include "debug.h"
 
 
-/* Types */
-struct commandline_options {
-    /* Path to shared library containing tests */
-    const char *suite_path;
-    /* Colorized output */
-    bool use_color;
-    /* Minimize output by moving cursor and overwrite
-     * "uninteresting" console output */
-    bool use_cursor;
-    /* Redirect stdout while running tests to minimize
-     * amount of console output. Output from failing
-     * tests will be shown. */
-    bool use_redirect;
-
-    bool nice_stats;
-    /* Path to directory where test stdout will be put */
-    char redirect_path[CHILI_REDIRECT_MAX_PATH];
-};
-
-enum parsed_commandline {
-    run_suite,
-    display_usage,
-    /* Errors */
-    error_no_suite_specified,
-    error_redirect_path_too_long,
-};
-
-
-/* Globals */
-struct commandline_options _options;
-
-static bool _continue_testing(struct chili_result *result,
-                              struct chili_aggregated *aggregated)
+static void _display_usage()
 {
-    bool error_occured = result->before == fixture_error ||
-                         result->after == fixture_error ||
-                         result->test == test_error ||
-                         result->execution == execution_unknown_error;
-
-    return error_occured ? false : true;
+    puts("chili - test runner\n"
+         "Usage: chili COMMAND [OPTIONS]... FILE\n"
+         "COMMAND is command to invoke, typically test.\n"
+         "\n"
+         "Valid commands are:\n"
+         "  test    Runs test in specified shared library\n"
+         "  list    Lists tests in specified shared library\n"
+         "  help    Shows help about a specified command\n");
 }
 
-static int _run_suite(struct chili_report *report,
-                      struct chili_aggregated *aggregated)
+static void _display_test_usage()
 {
-    int r;
-    bool before_failed;
-    bool after_failed;
-    struct chili_result result;
-    struct chili_bind_test test;
-    struct chili_times times;
-
-    times.timeout.tv_nsec = 0;
-    times.timeout.tv_sec = 10;
-
-    r = chili_redirect_begin(_options.use_redirect,
-                             _options.redirect_path);
-    if (r < 0){
-        return r;
-    }
-
-    r = chili_report_begin(report);
-    if (r < 0){
-        chili_redirect_end();
-        return r;
-    }
-
-    r = chili_run_begin(chili_bind_get_fixture(),
-                        &before_failed);
-    if (r < 0){
-        /* Tests arent safe to run when
-         * initialization failed */
-        if (before_failed){
-            chili_report_suite_begin_fail(r);
-        }
-        chili_report_end(aggregated);
-        chili_redirect_end();
-        return r;
-    }
-
-    do {
-        /*   0 if there were no more tests,
-         * > 0 if setup, test and teardown ran without error,
-         * < 0 if any of above encountered an error */
-        r = chili_bind_next_test(&test);
-        if (r <=0){
-            /* Fatal error, can not continue or last test
-             * has already executed, no more (0)  */
-            break;
-        }
-
-        r = chili_run_next(&result, aggregated, &test,
-                           &times, chili_report_test_begin);
-        if (r < 0){
-            /* Fatal error, can not continue */
-            break;
-        }
-
-        chili_report_test(&result, aggregated);
-
-        if (!_continue_testing(&result, aggregated)){
-            break;
-        }
-    } while (true); /* Stop executing on error */
-
-    /* Preserve error from above */
-    if (r < 0){
-        chili_run_end(&after_failed);
-    }
-    else {
-        r = chili_run_end(&after_failed);
-    }
-    if (after_failed){
-        chili_report_suite_end_fail(r);
-    }
-
-    chili_report_end(aggregated);
-    chili_redirect_end();
-    return r;
+    puts("chili - test runner\n"
+         "Test command, runs tests\n"
+         "Usage: chili test [OPTIONS]... FILE\n"
+         "FILE is a shared library containing tests\n"
+         "to be invoked.\n"
+         "\n"
+         "Options are:\n"
+         "  -c --color         use colored output\n"
+         "  -m --cursor        minimize output on console,\n"
+         "                     moves cursor\n"
+         "  -r --redirect\n"
+         "  -i --interactive   short for -c -m -r\n");
 }
 
-
-static enum parsed_commandline _parse_args(int argc, char *argv[])
+static void _display_list_usage()
+{
+    puts("chili - test runner\n"
+         "List command, lists tests.\n"
+         "Usage: chili list FILE\n"
+         "FILE is a shared library containing tests\n"
+         "to be invoked.\n"
+         "\n");
+}
+static int _handle_test_command(int argc, char *argv[])
 {
     int c;
     const char *short_options = "icmnrh:";
@@ -153,153 +64,123 @@ static enum parsed_commandline _parse_args(int argc, char *argv[])
     };
     int index;
     int len;
+    struct chili_test_options options;
+    const char *suite_path;
 
-    memset(&_options, 0, sizeof(struct commandline_options));
+    memset(&options, 0, sizeof(options));
 
     do {
         c = getopt_long(argc, argv, short_options,
                         long_options, &index);
         switch (c){
             case 'i':
-                _options.use_color = true;
-                _options.use_cursor = true;
-                _options.use_redirect = true;
-                _options.nice_stats = true;
-                strcpy(_options.redirect_path, "./chili_log");
+                options.use_color = true;
+                options.use_cursor = true;
+                options.use_redirect = true;
+                options.nice_stats = true;
+                strcpy(options.redirect_path, "./chili_log");
                 break;
             case 'c':
-                _options.use_color = true;
+                options.use_color = true;
                 break;
             case 'm':
-                _options.use_cursor = true;
+                options.use_cursor = true;
                 break;
             case 'n':
-                _options.nice_stats = true;
+                options.nice_stats = true;
                 break;
             case 'r':
                 len = strlen(optarg);
                 if (len >= CHILI_REDIRECT_MAX_PATH){
-                    return error_redirect_path_too_long;
+                    printf("Too long redirect path\n");
+                    return -1;
                 }
-                _options.use_redirect = true;
-                strcpy(_options.redirect_path, optarg);
+                options.use_redirect = true;
+                strcpy(options.redirect_path, optarg);
                 break;
             case 'h':
-                return display_usage;
+                _display_test_usage();
+                return -1;
         }
     } while (c != -1);
 
     if (optind < argc){
-        _options.suite_path = argv[optind];
+        suite_path = argv[optind];
     }
     else{
-        return error_no_suite_specified;
+        printf("Specify path to shared library "
+               "containing tests\n");
+        return -1;
     }
 
-    return run_suite;
+    /* Need to reset to be able to parse again */
+    optind = 0;
+
+    return chili_command_test(suite_path, &options);
 }
 
-void _display_usage()
+static int _handle_list_command(int argc, char *argv[])
 {
-    puts("chili - test runner\n"
-         "Usage: chili [OPTIONS]... FILE\n"
-         "FILE is a shared library containing tests\n"
-         "to be invoked.\n"
-         "\n"
-         "Options are:\n"
-         "  -c --color         use colored output\n"
-         "  -m --cursor        minimize output on console,\n"
-         "                     moves cursor\n"
-         "  -r --redirect\n"
-         "  -i --interactive   short for -c -m -r\n");
+    int c;
+    const char *short_options = "h:";
+    const struct option long_options[] = {
+        { "help",        no_argument,       0, 'h' },
+    };
+    int index;
+    const char *suite_path;
+
+    do {
+        c = getopt_long(argc, argv, short_options,
+                        long_options, &index);
+        switch (c){
+            case 'h':
+                _display_list_usage();
+                return -1;
+        }
+    } while (c != -1);
+
+    if (optind < argc){
+        suite_path = argv[optind];
+    }
+    else{
+        printf("Specify path to shared library "
+               "containing tests\n");
+        return -1;
+    }
+
+    /* Need to reset to be able to parse again */
+    optind = 0;
+
+    return chili_command_list(suite_path);
 }
 
 int main(int argc, char *argv[])
 {
-    int symbol_count;
-    int i;
-    int r;
-    char *name;
-    struct chili_report report;
-    struct chili_suite *suite;
-    struct chili_aggregated aggregated = { 0 };
+    const char *command;
 
-    switch (_parse_args(argc, argv)){
-        case error_redirect_path_too_long:
-            printf("Redirect path is too long.\n");
-            return 1;
-
-        case error_no_suite_specified:
-            printf("Specify path to shared library "
-                   "containing test suite.\n");
-            return 1;
-
-        case display_usage:
-            _display_usage();
-            return 1;
-
-        case run_suite:
-            break;
+    if (argc == 1){
+        printf("Specify command\n");
+        goto on_error;
     }
 
-    report.name = _options.suite_path;
-    report.use_color = _options.use_color;
-    report.use_cursor = _options.use_cursor;
-    report.nice_stats = _options.nice_stats;
+    command = argv[1];
+    /* Adjust for using getopt in command
+     * parsers */
+    argc = argc - 1;
+    argv = argv + 1;
 
-    /* Initialize modules */
-    r = chili_sym_begin(_options.suite_path, &symbol_count);
-    if (r < 0){
-        goto cleanup_sym;
+    if (strcmp(command, "test") == 0){
+        return _handle_test_command(argc, argv) > 0 ?
+            0 : 1;
     }
-    r = chili_suite_begin(symbol_count);
-    if (r < 0){
-        goto cleanup_suite;
-    }
-
-    /* Evaluate symbols to find tests and setup */
-    do {
-        i = chili_sym_next(&name);
-        if (i < 0){
-            goto cleanup_suite;
-        }
-        else if (i > 0){
-            r = chili_suite_eval(name);
-            if (r < 0){
-                goto cleanup_suite;
-            }
-        }
-        else{
-            break;
-        }
-    } while (true);
-
-    chili_suite_get(&suite);
-    r = chili_bind_begin(_options.suite_path, suite);
-    if (r < 0){
-        goto cleanup_suite;
-    }
-    r = _run_suite(&report, &aggregated);
-    chili_bind_end();
-
-cleanup_suite:
-    chili_suite_end();
-cleanup_sym:
-    chili_sym_end();
-
-    /* Errors triumphs */
-    if (r < 0){
-        return 1;
+    else if (strcmp(command, "list") == 0){
+        return _handle_list_command(argc, argv) >= 0 ?
+            0 : 1;
     }
 
-    debug_print("Exiting process\n"
-                "\tnum_succeeded: %d\n"
-                "\tnum_failed: %d\n"
-                "\tnum_errors: %d\n",
-                aggregated.num_succeeded,
-                aggregated.num_failed,
-                aggregated.num_errors);
+    printf("Unknown command: %s\n", command);
 
-    return aggregated.num_failed > 0 ?
-           1 : 0;
+on_error:
+    _display_usage();
+    return 1;
 }

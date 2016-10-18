@@ -175,7 +175,7 @@ static void _me_read_result(struct chili_result *result,
             /* Got an error */
             debug_print("Error while waiting for test to complete\n");
             result->execution = execution_unknown_error;
-            /* Child is still running at this point,
+            /* Child is still running at this point */
         }
     }
 }

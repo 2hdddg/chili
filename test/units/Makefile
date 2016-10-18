@@ -6,7 +6,7 @@ SOURCES=$(wildcard ../../src/*.c)
 OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
-CHILI=../../chili -i
+CHILI=../../chili test -i
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG -g
@@ -18,9 +18,10 @@ endif
 
 # Default target
 .PHONY: run
-run: out chili_run.so
+run: out chili_run.so chili_main.so
 	@echo Running unit tests
 	@$(CHILI) ./chili_run.so
+	@$(CHILI) ./chili_main.so
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
@@ -42,6 +43,10 @@ $(DEPS): out/%.d: ../../src/%.c
 	@$(CC) -MM $(CPPFLAGS) -MT '$@ $(basename $@).o' $< > $@;
 
 chili_run.so: tests_run.o out/run.o out/redirect.o
+	@echo Linking $@
+	@$(LD) $(LDFLAGS) $^ -o $@
+
+chili_main.so: tests_main.o out/main.o stub_command.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
 

@@ -37,8 +37,8 @@ def run(instances, testfile):
             print("%s\n%s" % (name, "Ok" if t() else "Fail"))
 
 
-def chili(options=[], print_stdout=False, print_stderr=False):
-    params = [CHILI]
+def chili_test(options=[], print_stdout=False, print_stderr=False):
+    params = [CHILI, 'test']
     params.extend(options)
 
     process = Popen(params, stdout=PIPE, stderr=PIPE)

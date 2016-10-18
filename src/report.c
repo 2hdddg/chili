@@ -77,7 +77,8 @@ static void _print_stats(struct chili_aggregated *aggregated)
         return;
     }
 
-    const char *color = aggregated->num_errors || aggregated->num_failed ?
+    const char *color = aggregated->num_errors > 0 ||
+                        aggregated->num_failed > 0 ?
         _color_fail : _color_success;
 
     /* Simple stats */
