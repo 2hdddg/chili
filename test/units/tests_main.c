@@ -19,6 +19,12 @@ static int _copy_command_test_params(const char *suite_path,
     return 0;
 }
 
+static int _copy_command_list_params(const char *suite_path)
+{
+    strncpy(_suite_path, suite_path, sizeof(_suite_path));
+    return 0;
+}
+
 static const char* _str_bool(bool b)
 {
     return b ? "true" : "false";
@@ -52,6 +58,7 @@ int each_before()
     memset(_suite_path, 0, sizeof(_suite_path));
     memset(&_options, 0, sizeof(_options));
     stub_command_test = _copy_command_test_params;
+    stub_command_list = _copy_command_list_params;
 
     return 1;
 }
@@ -111,4 +118,22 @@ int test_test_options_interactive()
     main(argc, argv);
 
     return _check_options(&options, &_options) ? 1 : 0;
+}
+
+/* Verifies that suite path is parsed correcly when no
+ * other parameters specified.
+ */
+int test_list_only_suite()
+{
+    char *argv[] = {"executable", "list", "a.so" };
+    int argc = sizeof(argv) / sizeof(char*);
+
+    main(argc, argv);
+
+    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+        printf("Path to suite is wrong.\n");
+        return 0;
+    }
+
+    return 1;
 }
