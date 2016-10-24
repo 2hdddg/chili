@@ -72,6 +72,17 @@ static int _build_path(char *buffer, const char *name)
     return 1;
 }
 
+void _write(int fd, const char *buf, int size)
+{
+    int written;
+
+    written = write(1, buf, size);
+    if (written != size){
+        printf("IO error: wrote %d should have "
+               "written %d\n", written, size);
+    }
+}
+
 /* Exports */
 int chili_redirect_begin(int enable, const char *path)
 {
@@ -147,17 +158,6 @@ void chili_redirect_stop()
     _stdout_copy = 0;
 
     debug_print("Stopped redirection\n");
-}
-
-void _write(int fd, const char *buf, int size)
-{
-    int written;
-
-    written = write(1, buf, size);
-    if (written != size){
-        printf("IO error: wrote %d should have "
-               "written %d\n", written, size);
-    }
 }
 
 void chili_redirect_print(const char *name, const char* before,

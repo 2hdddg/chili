@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +10,12 @@
 #define DEBUG 0
 #include "debug.h"
 
+/* Types */
+struct instance {
+    int max;
+    struct chili_suite suite;
+};
+
 /* Constants */
 const char *_once_before_name = "once_before";
 const char *_once_after_name  = "once_after";
@@ -16,23 +23,19 @@ const char *_each_before_name = "each_before";
 const char *_each_after_name  = "each_after";
 
 
-/* Globals */
-int _max;
-struct chili_suite _suite;
-
-
 /* List functions */
-static int _add(char *symbol)
+static int _add(struct instance *instance, char *symbol)
 {
-    char **test = _suite.tests + _suite.count;
+    struct chili_suite *suite = &instance->suite;
+    char **test = suite->tests + suite->count;
 
-    if (_suite.count >= _max){
+    if (suite->count >= instance->max){
         printf("Tests full\n");
         return -1;
     }
 
     *test = symbol;
-    _suite.count++;
+    suite->count++;
 
     debug_print("Found test: %s\n", symbol);
 
@@ -41,25 +44,25 @@ static int _add(char *symbol)
 
 
 /* Eval functions */
-static int _eval_fixture(char *symbol)
+static int _eval_fixture(char *symbol, struct chili_suite *suite)
 {
     if (strcmp(symbol, _once_before_name) == 0){
-        _suite.once_before = _once_before_name;
+        suite->once_before = _once_before_name;
         debug_print("Found fixture: once before\n");
         return 1;
     }
     if (strcmp(symbol, _once_after_name) == 0){
-        _suite.once_after = _once_after_name;
+        suite->once_after = _once_after_name;
         debug_print("Found fixture: once after\n");
         return 1;
     }
     if (strcmp(symbol, _each_before_name) == 0){
-        _suite.each_before = _each_before_name;
+        suite->each_before = _each_before_name;
         debug_print("Found fixture: each before\n");
         return 1;
     }
     if (strcmp(symbol, _each_after_name) == 0){
-        _suite.each_after = _each_after_name;
+        suite->each_after = _each_after_name;
         debug_print("Found fixture: each after\n");
         return 1;
     }
@@ -76,56 +79,68 @@ static int _eval_test(const char *symbol)
 }
 
 /* Externals */
-int chili_suite_begin(int max)
+int chili_suite_create(int max, chili_handle *handle)
 {
     int size = sizeof(char*) * max;
-    char **tests = NULL;
+    struct instance *instance;
 
-    debug_print("Beginning suite with max %d entries\n", max);
+    debug_print("Creating suite with max %d entries\n", max);
 
-    _max = max;
-    memset(&_suite, 0, sizeof(struct chili_suite));
-
-    tests = malloc(size);
-    if (!tests){
-        printf("Unable to allocate: %s\n", strerror(errno));
+    instance = malloc(sizeof(*instance));
+    if (instance == NULL){
+        printf("Unable to allocate instance\n");
         return -1;
     }
 
-    _suite.tests = tests;
+    instance->max = max;
+    memset(&instance->suite, 0, sizeof(struct chili_suite));
+    instance->suite.tests = malloc(size);
 
+    if (instance->suite.tests == NULL){
+        printf("Unable to allocate: %s\n", strerror(errno));
+        free(instance);
+        return -1;
+    }
+
+    *handle = instance;
     return 1;
 }
 
-int chili_suite_eval(char *symbol)
+int chili_suite_eval(chili_handle handle, char *symbol)
 {
+    struct instance *instance = (struct instance*)handle;
     int found;
 
     debug_print("Evaluating symbol %s\n", symbol);
 
-    found = _eval_fixture(symbol);
+    found = _eval_fixture(symbol, &instance->suite);
     if (found){
         return 1;
     }
 
     found = _eval_test(symbol);
     if (found){
-        return _add(symbol);
+        return _add(instance, symbol);
     }
 
     return 0;
 }
 
-int chili_suite_get(struct chili_suite **suite)
+int chili_suite_get(chili_handle handle,
+                    const struct chili_suite **suite)
 {
-    *suite = &_suite;
+    struct instance *instance = (struct instance*)handle;
+
+    *suite = &instance->suite;
     return 1;
 }
 
-void chili_suite_end()
+void chili_suite_destroy(chili_handle handle)
 {
-    debug_print("Ending suite\n");
+    struct instance *instance = (struct instance*)handle;
 
-    free(_suite.tests);
-    _suite.tests = NULL;
+    debug_print("Destroying suite\n");
+
+    free(instance->suite.tests);
+    free(instance);
 }

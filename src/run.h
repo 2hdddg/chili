@@ -72,27 +72,17 @@ struct chili_times {
 typedef void (*chili_test_begin)(const char*);
 
 /**
- * @brief Initializes module.
- *
- * Applies fixture. Pointers to data should be kept alive by caller
- * until chili_run_end is called.
+ * @brief Runs before fixture.
  *
  * @param fixture       Set of functions to call when suite is setup,
  *                      cleaned up and also functions to call before
  *                      each test and after each test.
- * @param before_failed Is set to true when suite setup fails.
- *                      When true, the return value is the
- *                      return value from the failed setup
- *                      function.
  * @return Negative on error, positive on success.
  */
-int chili_run_begin(const struct chili_bind_fixture *fixture,
-                    bool *before_failed);
+int chili_run_before(const struct chili_bind_fixture *fixture);
 
 /**
  * @brief Invokes test.
- *
- * Will invoke next test in the suite. Applies fixtures.
  *
  * @param times         Timing configurations used when tests and
  *                      fixtures are executed.
@@ -100,22 +90,19 @@ int chili_run_begin(const struct chili_bind_fixture *fixture,
  *         Success doesnt mean that the test succeeded only
  *         that no errors occured.
 */
-int chili_run_next(struct chili_result *result,
+int chili_run_test(struct chili_result *result,
                    struct chili_aggregated *aggregated,
-                   struct chili_bind_test *test,
+                   const struct chili_bind_test *test,
+                   const struct chili_bind_fixture *fixture,
                    const struct chili_times *times,
                    chili_test_begin test_begin);
 
 /**
- * @brief Releases module
+ * @brief Runs after fixture.
  *
  * Applies fixture cleanup.
  *
- * @param after_failed Is set to true when suite cleanup fails.
- *                     When true, the return value is the return
- *                     value from the failed setup function.
- *
  * @return Negative on error, positive on success.
  */
-int chili_run_end(bool *after_failed);
+int chili_run_after(const struct chili_bind_fixture *fixture);
 

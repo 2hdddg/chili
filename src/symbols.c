@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,15 +43,17 @@ struct symbol {
     uint64_t name;
 };
 
-/* Globals */
-static int _fd;
-static long _fdsize;
-static char *_map;
-static struct header _header;
-static struct section _dynsym;
-static struct section _dynstr;
-static int _count;
-static int _next;
+struct instance {
+    int            fd;
+    long           fdsize;
+    char           *map;
+    struct header  header;
+    struct section dynsym;
+    struct section dynstr;
+    int            count;
+    int            next;
+};
+
 
 /* Read functions */
 static uint16_t _get_16(enum endianness e, char *buf)
@@ -250,7 +253,7 @@ static void debug_print_symbol(struct symbol *s, int i)
 }
 
 /* External functions */
-int chili_sym_begin(const char *path, int *count)
+int chili_sym_create(const char *path, int *count, chili_handle *handle)
 {
     int fd = 0;
     long fdsize;
@@ -258,6 +261,15 @@ int chili_sym_begin(const char *path, int *count)
     int i;
     int found_dynsym = 0;
     struct stat path_stat;
+    struct instance *instance;
+
+    debug_print("Creating symbol parser\n");
+
+    instance = malloc(sizeof(*instance));
+    if (instance == NULL){
+        printf("Failed to allocate instance\n");
+        return -1;
+    }
 
     /* Check what path points to */
     if (stat(path, &path_stat) < 0){
@@ -295,19 +307,19 @@ int chili_sym_begin(const char *path, int *count)
         printf("File %s is not ELF\n", path);
         goto onerror;
     }
-    if (_get_header(map, &_header) < 0){
+    if (_get_header(map, &instance->header) < 0){
         goto onerror;
     }
-    debug_print_header(&_header);
+    debug_print_header(&instance->header);
 
     /* Try to find dynsym section */
-    for (i = 0; i < _header.section_count; i++){
-        if (_get_section(map, &_header, i, &_dynsym) < 0){
+    for (i = 0; i < instance->header.section_count; i++){
+        if (_get_section(map, &instance->header, i, &instance->dynsym) < 0){
             printf("Failed to read section %d\n", i);
             goto onerror;
         }
 
-        if (_dynsym.type == 11 /*SHT_DYNSYM*/){
+        if (instance->dynsym.type == 11 /*SHT_DYNSYM*/){
             found_dynsym = 1;
             break;
         }
@@ -316,25 +328,26 @@ int chili_sym_begin(const char *path, int *count)
         printf("Unable to find .dynsym section\n");
         goto onerror;
     }
-    debug_print_section(&_dynsym, "dynsym");
+    debug_print_section(&instance->dynsym, "dynsym");
 
     /* Try to find dynstr section */
-    if (_get_section(map, &_header, _dynsym.link,
-                     &_dynstr) < 0){
+    if (_get_section(map, &instance->header, instance->dynsym.link,
+                     &instance->dynstr) < 0){
         printf("Unable to find .dynstr section\n");
         goto onerror;
     }
-    debug_print_section(&_dynstr, "dynstr");
+    debug_print_section(&instance->dynstr, "dynstr");
 
-    _count = _dynsym.size / _dynsym.entsize;
-    _fd = fd;
-    _fdsize = fdsize;
-    _map = map;
-    _next = 0;
+    instance->count = instance->dynsym.size / instance->dynsym.entsize;
+    instance->fd = fd;
+    instance->fdsize = fdsize;
+    instance->map = map;
+    instance->next = 0;
+    *handle = instance;
 
     if (count){
-        *count = _count;
-        debug_print("ELF contains %d symbols\n", _count);
+        *count = instance->count;
+        debug_print("ELF contains %d symbols\n", instance->count);
     }
 
     return 1;
@@ -346,35 +359,44 @@ onerror:
     if (map){
         munmap(map, fdsize);
     }
+    free(instance);
+
     return -1;
 }
 
-int chili_sym_next(char **name)
+int chili_sym_next(chili_handle handle, char **name)
 {
     struct symbol symbol;
+    struct instance *instance = (struct instance*)handle;
 
     /* End of symbols */
-    if (_next >= _count){
+    if (instance->next >= instance->count){
         return 0;
     }
 
-    if (_get_symbol(_map, &_header, &_dynsym, _next,
-                    &symbol) <= 0){
+    if (_get_symbol(instance->map, &instance->header,
+                    &instance->dynsym,
+                    instance->next, &symbol) <= 0){
         printf("Failed to retrieve symbol\n");
         return -1;
     }
-    debug_print_symbol(&symbol, _next);
+    debug_print_symbol(&symbol, instance->next);
 
-    *name = _get_string(_map, &_dynstr, symbol.name);
+    *name = _get_string(instance->map, &instance->dynstr, symbol.name);
     debug_print("Symbol name string: %s\n", *name);
 
-    _next++;
+    instance->next++;
 
     return 1;
 }
 
-void chili_sym_end()
+void chili_sym_destroy(chili_handle handle)
 {
-    close(_fd);
-    munmap(_map, _fdsize);
+    struct instance *instance = (struct instance*)handle;
+
+    debug_print("Destroying symbol parser\n");
+
+    close(instance->fd);
+    munmap(instance->map, instance->fdsize);
+    free(instance);
 }

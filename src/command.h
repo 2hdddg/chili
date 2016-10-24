@@ -24,22 +24,22 @@ struct chili_test_options {
 /**
  * @brief Runs tests
  *
- * @param suite_path Path to shared library containing tests.
- * @param options    Options to use when running tests.
+ * @param library_path Path to shared library containing tests.
+ * @param options      Options to use when running tests.
  *
  * @return Negative on error.
  *         Zero when all tests succeeded.
  *         Positive on test error/failure.
  */
-int chili_command_test(const char *suite_path,
+int chili_command_test(const char *library_path,
                        const struct chili_test_options *options);
 
 /**
  * @brief Prints list of tests in suite.
  *
- * @param suite_path Path to shared library containing tests.
+ * @param library_path Path to shared library containing tests.
  *
  * @return Negative on error.
  */
-int chili_command_list(const char *suite_path);
+int chili_command_list(const char *library_path);
 

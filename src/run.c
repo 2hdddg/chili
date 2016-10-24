@@ -21,10 +21,6 @@ struct child_result {
     enum fixture_result  after;
 };
 
-
-/* Globals */
-static const struct chili_bind_fixture *_fixture;
-
 /* Locals */
 static void _sigchld_handler(int sig, siginfo_t *info, void* context)
 {
@@ -210,7 +206,8 @@ static int _fork_and_run(chili_func each_before,
     }
 
     if (child == 0){
-        _child_write_result(each_before, test, each_after, result->name, pipes[1]);
+        _child_write_result(each_before, test, each_after,
+                            result->name, pipes[1]);
         /* Exit child here ! */
         debug_print("Exiting process %d\n", getpid());
         _exit(0);
@@ -247,30 +244,26 @@ static int _fork_and_run(chili_func each_before,
 }
 
 /* Exports */
-int chili_run_begin(const struct chili_bind_fixture *fixture,
-                    bool *before_failed)
+int chili_run_before(const struct chili_bind_fixture *fixture)
 {
     int r;
-    *before_failed = false;
 
     if (fixture->once_before){
         r = fixture->once_before();
         if (r < 0){
-            *before_failed = true;
             return r;
         }
     }
-
-    _fixture = fixture;
 
     _signal_setup();
 
     return 1;
 }
 
-int chili_run_next(struct chili_result *result,
+int chili_run_test(struct chili_result *result,
                    struct chili_aggregated *aggregated,
-                   struct chili_bind_test *test,
+                   const struct chili_bind_test *test,
+                   const struct chili_bind_fixture *fixture,
                    const struct chili_times *times,
                    chili_test_begin test_begin)
 {
@@ -287,8 +280,8 @@ int chili_run_next(struct chili_result *result,
         test_begin(result->name);
     }
 
-    if (_fork_and_run(_fixture->each_before, test->func,
-                      _fixture->each_after, result, times) < 0){
+    if (_fork_and_run(fixture->each_before, test->func,
+                      fixture->each_after, result, times) < 0){
         return -1;
     };
 
@@ -297,14 +290,12 @@ int chili_run_next(struct chili_result *result,
     return 1;
 }
 
-int chili_run_end(bool *after_failed)
+int chili_run_after(const struct chili_bind_fixture *fixture)
 {
     int r = 1;
-    *after_failed = false;
 
-    if (_fixture->once_after){
-        r = _fixture->once_after();
-        *after_failed = r < 0;
+    if (fixture->once_after){
+        r = fixture->once_after();
     }
 
     return r;

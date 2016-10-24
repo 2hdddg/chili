@@ -1,5 +1,6 @@
 #pragma once
 
+#include "handle.h"
 #include "suite.h"
 
 typedef int (*chili_func)(void);
@@ -20,21 +21,23 @@ struct chili_bind_test
 
 
 /**
- * @brief Initializes module. Binds fixture symbols.
+ * @brief Creates symbol binder for a library.
  *
- * Reference to suite is held on to until end is called.
- * Data retrieved from the module is kept alive until
- * end is called.
+ * Reference to suite is held on to until destroy is called.
  *
  * @return Negative on error, positive on success.
  */
-int chili_bind_begin(const char *path, const struct chili_suite *suite);
+int chili_bind_create(const char *path,
+                      const struct chili_suite *suite,
+                      chili_handle *handle);
 
 /**
- * @brief Returns bound fixture functions.
- * @return Bound fixture functions.
+ * @brief Returns fixture
+ *
+ * @return void
  */
-const struct chili_bind_fixture* chili_bind_get_fixture();
+int chili_bind_fixture(chili_handle handle,
+                       struct chili_bind_fixture *fixture);
 
 /**
  * @brief Binds next test in suite.
@@ -42,12 +45,14 @@ const struct chili_bind_fixture* chili_bind_get_fixture();
  * @return Negative on error, positive on success, zero if
  *         no more tests exists in suite.
  */
-int chili_bind_next_test(struct chili_bind_test *bind_test);
+int chili_bind_test(chili_handle handle,
+                    int index,
+                    struct chili_bind_test *bind_test);
 
 /**
  * @brief Releases all resources held by the module.
  *
  * @return Negative on error, positive on success.
  */
-int chili_bind_end();
+void chili_bind_destroy(chili_handle handle);
 

@@ -1,32 +1,31 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
 
 #include "bind.h"
 
+struct instance {
+    void *lib_handle;
+    const struct chili_suite *suite;
+};
 
-/* Globals */
-static void *_libhandle = NULL;
-static struct chili_bind_fixture _fixture;
-static int _next = 0;
-static const struct chili_suite *_suite;
-
-
-static chili_func _get_func(const char *name)
+static chili_func _get_func(void *lib_handle, const char *name)
 {
     chili_func f;
 
-    *(void **)(&f) = dlsym(_libhandle, name);
+    *(void **)(&f) = dlsym(lib_handle, name);
     if (f == NULL){
         printf("Unable to dlsym %s\n", name);
     }
     return f;
 }
 
-static int _bind_func(const char *name, chili_func *func)
+static int _bind_func(void *lib_handle, const char *name,
+                      chili_func *func)
 {
     if (name){
-        *func = _get_func(name);
+        *func = _get_func(lib_handle, name);
         return *func == NULL ? -1 : 1;
     }
     else{
@@ -35,82 +34,108 @@ static int _bind_func(const char *name, chili_func *func)
     }
 }
 
-int chili_bind_begin(const char *path,
-                     const struct chili_suite *suite)
+int chili_bind_create(const char *path,
+                      const struct chili_suite *suite,
+                      chili_handle *handle)
 {
     int r;
+    void *lib_handle = NULL;
+    struct instance *instance = NULL;
 
-    _libhandle = dlopen(path, RTLD_LAZY);
-    if (_libhandle == NULL){
+    lib_handle = dlopen(path, RTLD_LAZY);
+    if (lib_handle == NULL){
         printf("Failed to load library %s due to %s\n",
-            path, dlerror());
+               path, dlerror());
         return -1;
     }
 
-    r = _bind_func(suite->once_before, &_fixture.once_before);
-    if (r < 0){
-        goto onerror;
-    }
-    r = _bind_func(suite->once_after, &_fixture.once_after);
-    if (r < 0){
-        goto onerror;
-    }
-    r = _bind_func(suite->each_before, &_fixture.each_before);
-    if (r < 0){
-        goto onerror;
-    }
-    r = _bind_func(suite->each_after, &_fixture.each_after);
-    if (r < 0){
+    instance = malloc(sizeof(*instance));
+    if (instance == NULL){
+        r = -1;
+        printf("Failed to allocate instance\n");
         goto onerror;
     }
 
-    _suite = suite;
+    instance->lib_handle = lib_handle;
+
+
+    instance->suite = suite;
+    *handle = instance;
 
     return 1;
 
 onerror:
-    dlclose(_libhandle);
-    _libhandle = NULL;
+    dlclose(lib_handle);
+    if (instance != NULL){
+        free(instance);
+    }
     return r;
 }
 
-const struct chili_bind_fixture* chili_bind_get_fixture()
+int chili_bind_fixture(chili_handle handle,
+                       struct chili_bind_fixture *fixture)
 {
-    return &_fixture;
-}
-
-int chili_bind_next_test(struct chili_bind_test *bind_test)
-{
-    const char *name;
+    struct instance *instance = (struct instance*)handle;
+    void* lib_handle = instance->lib_handle;
+    const struct chili_suite *suite = instance->suite;
     int r;
 
-    if (_next >= _suite->count){
-        /* No more tests */
-        return 0;
+    r = _bind_func(lib_handle, suite->once_before,
+                   &fixture->once_before);
+    if (r < 0){
+        return r;
+    }
+    r = _bind_func(lib_handle, suite->once_after,
+                   &fixture->once_after);
+    if (r < 0){
+        return r;
+    }
+    r = _bind_func(lib_handle, suite->each_before,
+                   &fixture->each_before);
+    if (r < 0){
+        return r;
+    }
+    r = _bind_func(lib_handle, suite->each_after,
+                   &fixture->each_after);
+    if (r < 0){
+        return r;
     }
 
-    name = _suite->tests[_next];
+    return r;
+}
+
+int chili_bind_test(chili_handle handle,
+                    int index,
+                    struct chili_bind_test *bind_test)
+{
+    struct instance *instance = (struct instance*)handle;
+    const char *name;
+    int r;
+    const struct chili_suite *suite = instance->suite;
+
+    if (index >= suite->count || index < 0){
+        /* Invalid index */
+        return -1;
+    }
+
+    name = suite->tests[index];
     if (name == NULL){
         return -1;
     }
-    r = _bind_func(name, &bind_test->func);
+    r = _bind_func(instance->lib_handle, name, &bind_test->func);
     if (r < 0){
         return -1;
     }
     bind_test->name = name;
 
-    _next++;
-
     return 1;
 }
 
-int chili_bind_end()
+void chili_bind_destroy(chili_handle handle)
 {
-    if (_libhandle){
-        dlclose(_libhandle);
-        _libhandle = NULL;
-    }
-    memset(&_suite, 0, sizeof(_suite));
-    return 1;
+    struct instance *instance = (struct instance*)handle;
+
+    dlclose(instance->lib_handle);
+    free(instance);
 }
 
