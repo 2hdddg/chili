@@ -18,10 +18,11 @@ endif
 
 # Default target
 .PHONY: run
-run: out chili_run.so chili_main.so
+run: out chili_run.so chili_main.so chili_suite.so
 	@echo Running unit tests
 	@$(CHILI) ./chili_run.so
 	@$(CHILI) ./chili_main.so
+	@$(CHILI) ./chili_suite.so
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)
@@ -49,6 +50,11 @@ chili_run.so: tests_run.o out/run.o out/redirect.o
 chili_main.so: tests_main.o out/main.o stub_command.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
+
+chili_suite.so: tests_suite.o out/suite.o
+	@echo Linking $@
+	@$(LD) $(LDFLAGS) $^ -o $@
+
 
 .PHONY: clean
 clean:
