@@ -146,17 +146,20 @@ int chili_command_test(const char *library_path,
     return aggregated.num_failed > 0 ? 0 : 1;
 }
 
-int chili_command_list(const char *library_path)
+int chili_command_list(const char **library_paths,
+                       int num_libraries)
 {
-    int r;
+    int r = 0;
     chili_handle lib_handle;
 
-    r = chili_lib_create(library_path, &lib_handle);
-    if (r < 0){
-        return r;
+    for (int i = 0; i < num_libraries; i++){
+        r = chili_lib_create(library_paths[i], &lib_handle);
+        if (r < 0){
+            return r;
+        }
+        r = chili_lib_print_tests(lib_handle);
+        chili_lib_destroy(lib_handle);
     }
-    r = chili_lib_print_tests(lib_handle);
-    chili_lib_destroy(lib_handle);
 
     return r;
 }

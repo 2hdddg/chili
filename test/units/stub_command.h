@@ -5,5 +5,6 @@
  */
 int (*stub_command_test)(const char *suite_path,
                          const struct chili_test_options *options);
-int (*stub_command_list)(const char *suite_path);
+int (*stub_command_list)(const char **suite_paths,
+                         int num_suite_paths);
 

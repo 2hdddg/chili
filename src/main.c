@@ -122,12 +122,13 @@ static int _handle_test_command(int argc, char *argv[])
 static int _handle_list_command(int argc, char *argv[])
 {
     int c;
+    const char **suite_paths;
+    int num_suite_paths = 0;
     const char *short_options = "h:";
     const struct option long_options[] = {
-        { "help",        no_argument,       0, 'h' },
+        { "help", no_argument, 0, 'h' },
     };
     int index;
-    const char *suite_path;
 
     do {
         c = getopt_long(argc, argv, short_options,
@@ -140,7 +141,8 @@ static int _handle_list_command(int argc, char *argv[])
     } while (c != -1);
 
     if (optind < argc){
-        suite_path = argv[optind];
+        suite_paths = (const char**)&argv[optind];
+        num_suite_paths = argc - optind;
     }
     else{
         printf("Specify path to shared library "
@@ -151,7 +153,7 @@ static int _handle_list_command(int argc, char *argv[])
     /* Need to reset to be able to parse again */
     optind = 0;
 
-    return chili_command_list(suite_path);
+    return chili_command_list(suite_paths, num_suite_paths);
 }
 
 int main(int argc, char *argv[])

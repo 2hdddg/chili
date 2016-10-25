@@ -37,9 +37,12 @@ int chili_command_test(const char *library_path,
 /**
  * @brief Prints list of tests in suite.
  *
- * @param library_path Path to shared library containing tests.
+ * @param library_paths Array of paths to shared library containing
+ *                      tests.
+ * @param num_libraries Number of entries in array.
  *
  * @return Negative on error.
  */
-int chili_command_list(const char *library_path);
+int chili_command_list(const char **library_paths,
+                       int num_libraries);
 
