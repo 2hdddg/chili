@@ -12,16 +12,26 @@ char _suite_path[100];
 char _suite_path2[100];
 struct chili_test_options _options;
 
-static int _copy_command_test_params(const char *suite_path,
-                                     const struct chili_test_options *options)
+static int _copy_test_params(const char **suite_paths,
+                             int num_suite_paths,
+                             const struct chili_test_options *options)
 {
-    strncpy(_suite_path, suite_path, sizeof(_suite_path));
+    if (num_suite_paths > 0){
+        strncpy(_suite_path, suite_paths[0], sizeof(_suite_path));
+    }
+    if (num_suite_paths > 1){
+        strncpy(_suite_path2, suite_paths[1], sizeof(_suite_path2));
+    }
+    if (num_suite_paths > 2){
+        printf("Too many paths\n");
+        return -1;
+    }
     _options = *options;
     return 0;
 }
 
-static int _copy_command_list_params(const char **suite_paths,
-                                     int num_suite_paths)
+static int _copy_list_params(const char **suite_paths,
+                             int num_suite_paths)
 {
     if (num_suite_paths > 0){
         strncpy(_suite_path, suite_paths[0], sizeof(_suite_path));
@@ -68,8 +78,8 @@ int each_before()
 {
     memset(_suite_path, 0, sizeof(_suite_path));
     memset(&_options, 0, sizeof(_options));
-    stub_command_test = _copy_command_test_params;
-    stub_command_list = _copy_command_list_params;
+    stub_command_test = _copy_test_params;
+    stub_command_list = _copy_list_params;
 
     return 1;
 }
@@ -86,6 +96,28 @@ int test_test_only_suite()
 
     if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
         printf("Path to suite is wrong.\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+/* Verifies that more than one suite can be specified
+ * to the test command
+ */
+int test_test_several_suites()
+{
+    char *argv[] = {"executable", "test", "a.so", "b.so" };
+    int argc = sizeof(argv) / sizeof(char*);
+
+    main(argc, argv);
+
+    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+        printf("Path to first suite is wrong.\n");
+        return 0;
+    }
+    if (strncmp(_suite_path2, argv[3], sizeof(_suite_path2)) != 0){
+        printf("Path to second suite is wrong.\n");
         return 0;
     }
 
@@ -149,6 +181,9 @@ int test_list_only_suite()
     return 1;
 }
 
+/* Verifies that more than one suite can be specified
+ * to the list command
+ */
 int test_list_several_suites()
 {
     char *argv[] = {"executable", "list", "a.so", "b.so" };

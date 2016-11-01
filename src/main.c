@@ -51,6 +51,8 @@ static void _display_list_usage()
 static int _handle_test_command(int argc, char *argv[])
 {
     int c;
+    const char **suite_paths;
+    int num_suite_paths = 0;
     const char *short_options = "icmnrh:";
     const struct option long_options[] = {
         /*   Turns on color, cursor movements and redirect.
@@ -65,7 +67,6 @@ static int _handle_test_command(int argc, char *argv[])
     int index;
     int len;
     struct chili_test_options options;
-    const char *suite_path;
 
     memset(&options, 0, sizeof(options));
 
@@ -105,7 +106,8 @@ static int _handle_test_command(int argc, char *argv[])
     } while (c != -1);
 
     if (optind < argc){
-        suite_path = argv[optind];
+        suite_paths = (const char**)&argv[optind];
+        num_suite_paths = argc - optind;
     }
     else{
         printf("Specify path to shared library "
@@ -116,7 +118,7 @@ static int _handle_test_command(int argc, char *argv[])
     /* Need to reset to be able to parse again */
     optind = 0;
 
-    return chili_command_test(suite_path, &options);
+    return chili_command_test(suite_paths, num_suite_paths, &options);
 }
 
 static int _handle_list_command(int argc, char *argv[])

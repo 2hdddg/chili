@@ -24,14 +24,17 @@ struct chili_test_options {
 /**
  * @brief Runs tests
  *
- * @param library_path Path to shared library containing tests.
- * @param options      Options to use when running tests.
+ * @param library_paths Array of paths to shared library containing
+ *                      tests.
+ * @param num_libraries Number of entries in array.
+ * @param options       Options to use when running tests.
  *
  * @return Negative on error.
  *         Zero when all tests succeeded.
  *         Positive on test error/failure.
  */
-int chili_command_test(const char *library_path,
+int chili_command_test(const char **library_paths,
+                       int num_libraries,
                        const struct chili_test_options *options);
 
 /**

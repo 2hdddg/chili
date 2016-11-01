@@ -95,7 +95,8 @@ static const char *_bool_str(bool b)
     return b ? "true" : "false";
 }
 
-int chili_command_test(const char *library_path,
+int chili_command_test(const char **library_paths,
+                       int num_libraries,
                        const struct chili_test_options *options)
 {
     int r;
@@ -104,35 +105,35 @@ int chili_command_test(const char *library_path,
     chili_handle lib_handle;
 
     debug_print("Running test command with options:\n"
-                "\tsuite_path: %s\n"
                 "\tuse_color: %s\n"
                 "\tuse_cursor: %s\n"
                 "\tuse_redirect: %s\n"
                 "\tnice_stats: %s\n"
                 "\tredirect_path: %s\n",
-                library_path,
                 _bool_str(options->use_color),
                 _bool_str(options->use_cursor),
                 _bool_str(options->use_redirect),
                 _bool_str(options->nice_stats),
                 options->redirect_path);
 
-    report.name = library_path;
+    report.name = ""; //library_path;
     report.use_color = options->use_color;
     report.use_cursor = options->use_cursor;
     report.nice_stats = options->nice_stats;
 
-    r = chili_lib_create(library_path, &lib_handle);
-    if (r < 0){
-        return r;
-    }
+    for (int i = 0; i < num_libraries; i++){
+        r = chili_lib_create(library_paths[i], &lib_handle);
+        if (r < 0){
+            return r;
+        }
 
-    r = _run_suite(lib_handle, options, &report, &aggregated);
-    chili_lib_destroy(lib_handle);
+        r = _run_suite(lib_handle, options, &report, &aggregated);
+        chili_lib_destroy(lib_handle);
 
-    /* Errors triumphs */
-    if (r < 0){
-        return r;
+        /* Errors triumphs */
+        if (r < 0){
+            return r;
+        }
     }
 
     debug_print("Test command ended:\n"
