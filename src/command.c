@@ -101,7 +101,6 @@ int chili_command_test(const char **library_paths,
                 _bool_str(options->nice_stats),
                 options->redirect_path);
 
-    report.name = ""; //library_path;
     report.use_color = options->use_color;
     report.use_cursor = options->use_cursor;
     report.nice_stats = options->nice_stats;

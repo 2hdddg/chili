@@ -5,7 +5,6 @@
 #include "run.h"
 
 struct chili_report {
-    const char* name;
     bool use_color;
     bool use_cursor;
     bool nice_stats;

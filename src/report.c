@@ -25,8 +25,8 @@ const char *_stats_some_failed = "%sExecuted %d tests, "
 const char *_stats_some_failed_errors = "%sExecuted %d tests, "
                                         "%d failed, %d succeeded, "
                                         "%d errors%s\n";
+
 /* Ansi escape codes for colors and stuff */
-const char *_color_headline_ansi = "\x1b[1m\x1b[34m";
 const char *_color_success_ansi = "\x1b[32m";
 const char *_color_fail_ansi = "\x1b[31;1m";
 const char *_color_reset_ansi = "\033[0m";
@@ -36,7 +36,6 @@ const char *_clear_to_end = "\x1b[K";
 
 /* Used at runtime, set to empty strings if colors
  * are disabled */
-const char *_color_headline;
 const char *_color_success;
 const char *_color_fail;
 const char *_color_reset;
@@ -185,18 +184,15 @@ int chili_report_begin(struct chili_report *report)
     _report = report;
 
     if (report->use_color){
-        _color_headline = _color_headline_ansi;
         _color_success = _color_success_ansi;
         _color_fail = _color_fail_ansi;
         _color_reset = _color_reset_ansi;
     }
     else{
-        _color_headline = _color_success =
-            _color_fail = _color_reset = "";
+        _color_success = "";
+        _color_fail = "";
+        _color_reset = "";
     }
-
-    printf("%sRunning suite %s%s\n",
-        _color_headline, report->name, _color_reset);
 
     return 1;
 }
