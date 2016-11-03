@@ -9,12 +9,20 @@
 #include "library.h"
 
 struct instance {
+    /* Path to library */
     const char *path;
+    /* Symbol parser handle */
     chili_handle sym_handle;
+    /* Suite handle */
     chili_handle suite_handle;
+    /* Binder handle */
     chili_handle bind_handle;
+    /* Extraced suite */
     const struct chili_suite *suite;
+    /* Extraxted ficture */
     struct chili_bind_fixture fixture;
+    /* Progress callback */
+    chili_progress report_progress;
 };
 
 static int _build_suite(chili_handle sym_handle,
@@ -44,6 +52,7 @@ static int _build_suite(chili_handle sym_handle,
 }
 
 int chili_lib_create(const char *path,
+                     chili_progress report_progress,
                      chili_handle *handle)
 {
     int r;
@@ -91,6 +100,8 @@ int chili_lib_create(const char *path,
     chili_bind_fixture(instance->bind_handle,
                        &instance->fixture);
 
+    instance->report_progress = report_progress;
+
     *handle = instance;
     return 1;
 
@@ -136,7 +147,7 @@ int chili_lib_next_test(chili_handle handle,
 
     r = chili_run_test(result, aggregated, &test,
                        &instance->fixture,
-                       times, NULL);
+                       times, instance->report_progress);
     if (r < 0){
         /* Fatal error, can not continue */
         return r;
@@ -152,6 +163,12 @@ int chili_lib_named_test(chili_handle handle, const char *name)
     return 0;
 }
 
+int chili_lib_after_fixture(chili_handle handle)
+{
+    struct instance *instance = (struct instance*)handle;
+    return chili_run_after(&instance->fixture);
+}
+
 int chili_lib_print_tests(chili_handle handle)
 {
     struct instance *instance = (struct instance*)handle;
@@ -160,12 +177,6 @@ int chili_lib_print_tests(chili_handle handle)
         printf("%s:%s\n", instance->path, instance->suite->tests[i]);
     }
     return 1;
-}
-
-int chili_lib_after_fixture(chili_handle handle)
-{
-    struct instance *instance = (struct instance*)handle;
-    return chili_run_after(&instance->fixture);
 }
 
 void chili_lib_destroy(chili_handle handle)

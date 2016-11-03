@@ -30,7 +30,7 @@ static int _add(struct instance *instance, char *symbol)
     char **test = suite->tests + suite->count;
 
     if (suite->count >= instance->max){
-        printf("Tests full\n");
+        printf("Tests full, cannot add: %s\n", symbol);
         return -1;
     }
 

@@ -126,12 +126,14 @@ static int _errounous_test()
     return -1;
 }
 
-static void _timestamped_progress(const char *name)
+static void _timestamped_progress(const char *library,
+                                  const char *name)
 {
     clock_gettime(CLOCK_MONOTONIC_RAW, _progress_time);
 }
 
-static void _progress(const char *name)
+static void _progress(const char *library,
+                      const char *name)
 {
 }
 

@@ -7,6 +7,8 @@ OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
 CHILI=../../chili test -i
+SUITES=chili_run.so chili_main.so chili_suite.so
+SUITE_PATHS=$(SUITES:%=./%)
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -DDEBUG -g
@@ -18,11 +20,9 @@ endif
 
 # Default target
 .PHONY: run
-run: out chili_run.so chili_main.so chili_suite.so
+run: out $(SUITES)
 	@echo Running unit tests
-	@$(CHILI) ./chili_run.so
-	@$(CHILI) ./chili_main.so
-	@$(CHILI) ./chili_suite.so
+	@$(CHILI) $(SUITE_PATHS)
 
 ifneq ($(MAKECMDGOALS), clean)
 -include $(DEPS)

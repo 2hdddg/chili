@@ -265,19 +265,20 @@ int chili_run_test(struct chili_result *result,
                    const struct chili_bind_test *test,
                    const struct chili_bind_fixture *fixture,
                    const struct chili_times *times,
-                   chili_test_begin test_begin)
+                   chili_progress test_progress)
 {
     result->execution = execution_not_started;
     result->before = result->after = fixture_uncertain;
     result->test = test_uncertain;
     result->name = test->name;
+    result->library = test->library;
 
     debug_print("Preparing to run %s\n", result->name);
 
     /* Call hook that test begins even before fixtures
      * to give early feedback */
-    if (test_begin){
-        test_begin(result->name);
+    if (test_progress){
+        test_progress(NULL, result->name);
     }
 
     if (_fork_and_run(fixture->each_before, test->func,

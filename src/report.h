@@ -12,7 +12,8 @@ struct chili_report {
 };
 
 int chili_report_begin(struct chili_report *report);
-void chili_report_test_begin(const char *name);
+void chili_report_test_begin(const char *library,
+                             const char *name);
 void chili_report_suite_begin_fail(int r);
 void chili_report_test(struct chili_result *result,
                        struct chili_aggregated *aggregated);

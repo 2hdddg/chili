@@ -22,7 +22,6 @@ static bool _continue_testing(struct chili_result *result,
 
 static int _run_suite(chili_handle lib_handle,
                       const struct chili_test_options *options,
-                      struct chili_report *report,
                       struct chili_aggregated *aggregated)
 {
     int r;
@@ -32,18 +31,6 @@ static int _run_suite(chili_handle lib_handle,
 
     times.timeout.tv_nsec = 0;
     times.timeout.tv_sec = 10;
-
-    r = chili_redirect_begin(options->use_redirect,
-                             options->redirect_path);
-    if (r < 0){
-        return r;
-    }
-
-    r = chili_report_begin(report);
-    if (r < 0){
-        chili_redirect_end();
-        return r;
-    }
 
     r = chili_lib_before_fixture(lib_handle);
     if (r < 0){
@@ -85,8 +72,6 @@ static int _run_suite(chili_handle lib_handle,
         }
     }
 
-    chili_report_end(aggregated);
-    chili_redirect_end();
     return r;
 }
 
@@ -121,20 +106,35 @@ int chili_command_test(const char **library_paths,
     report.use_cursor = options->use_cursor;
     report.nice_stats = options->nice_stats;
 
+    r = chili_redirect_begin(options->use_redirect,
+                             options->redirect_path);
+    if (r < 0){
+        return r;
+    }
+
+    r = chili_report_begin(&report);
+    if (r < 0){
+        chili_redirect_end();
+        return r;
+    }
+
     for (int i = 0; i < num_libraries; i++){
-        r = chili_lib_create(library_paths[i], &lib_handle);
+        r = chili_lib_create(library_paths[i],
+                             chili_report_test_begin,
+                             &lib_handle);
         if (r < 0){
-            return r;
+            goto on_exit;
         }
 
-        r = _run_suite(lib_handle, options, &report, &aggregated);
+        r = _run_suite(lib_handle, options, &aggregated);
         chili_lib_destroy(lib_handle);
 
         /* Errors triumphs */
         if (r < 0){
-            return r;
+            goto on_exit;
         }
     }
+
 
     debug_print("Test command ended:\n"
                 "\tnum_succeeded: %d\n"
@@ -144,7 +144,13 @@ int chili_command_test(const char **library_paths,
                 aggregated.num_failed,
                 aggregated.num_errors);
 
-    return aggregated.num_failed > 0 ? 0 : 1;
+    r = aggregated.num_failed > 0 ? 0 : 1;
+
+on_exit:
+    chili_report_end(&aggregated);
+    chili_redirect_end();
+
+    return r;
 }
 
 int chili_command_list(const char **library_paths,
@@ -154,7 +160,7 @@ int chili_command_list(const char **library_paths,
     chili_handle lib_handle;
 
     for (int i = 0; i < num_libraries; i++){
-        r = chili_lib_create(library_paths[i], &lib_handle);
+        r = chili_lib_create(library_paths[i], NULL, &lib_handle);
         if (r < 0){
             return r;
         }

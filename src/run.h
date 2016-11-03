@@ -7,10 +7,10 @@
 
 /* Initial state is uncertain.
  *
- * nothing_to_do - When no fixture function exists.
- * error         - Fixture function executed and return < 0.
- * success       - Fixture function executed and return >= 0.
-*/
+ * not_needed - When no fixture function exists.
+ * error      - Fixture function executed and return < 0.
+ * success    - Fixture function executed and return >= 0.
+ */
 enum fixture_result {
     fixture_uncertain,
     fixture_not_needed,
@@ -23,7 +23,7 @@ enum fixture_result {
  * error   - Test function executed and returned < 0.
  * failure - Test function executed and returned 0.
  * success - Test function executed and returned > 0.
-*/
+ */
 enum test_result {
     test_uncertain,
     test_error,
@@ -31,6 +31,14 @@ enum test_result {
     test_success,
 };
 
+/* Initial state is not_started
+ *
+ * unknown_error - Execution of test failed in
+ *                 an unexpected way.
+ * crashed       - Test or fixture crashed.
+ * timed_out     - Test or fixture took too long.
+ * done          - Test and fixture executed.
+ */
 enum execution_result {
     execution_not_started,
     execution_unknown_error,
@@ -47,6 +55,7 @@ enum execution_result {
  */
 struct chili_result {
     const char            *name;
+    const char            *library;
     enum execution_result execution;
     enum fixture_result   before;
     enum test_result      test;
@@ -69,7 +78,8 @@ struct chili_times {
     struct timespec progress_tick;
 };
 
-typedef void (*chili_test_begin)(const char*);
+typedef void (*chili_progress)(const char *library_path,
+                               const char *test_name);
 
 /**
  * @brief Runs before fixture.
@@ -95,7 +105,7 @@ int chili_run_test(struct chili_result *result,
                    const struct chili_bind_test *test,
                    const struct chili_bind_fixture *fixture,
                    const struct chili_times *times,
-                   chili_test_begin test_begin);
+                   chili_progress test_progress);
 
 /**
  * @brief Runs after fixture.

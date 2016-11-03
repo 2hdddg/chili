@@ -104,7 +104,7 @@ int chili_redirect_begin(int enable, const char *path)
             return -1;
         }
 
-        /* Copy path into pre-allocated buffers and 
+        /* Copy path into pre-allocated buffers and
          * make sure that it ends with a slash */
         strncpy(_stdout_name, path, path_length);
         if (_stdout_name[path_length - 1] != '/'){

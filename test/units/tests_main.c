@@ -8,21 +8,21 @@
 /* Linking to real main. No header file for that. */
 extern int main(int argc, char *argv[]);
 
-char _suite_path[100];
-char _suite_path2[100];
+char _library_path[100];
+char _library_path2[100];
 struct chili_test_options _options;
 
-static int _copy_test_params(const char **suite_paths,
-                             int num_suite_paths,
+static int _copy_test_params(const char **library_paths,
+                             int num_library_paths,
                              const struct chili_test_options *options)
 {
-    if (num_suite_paths > 0){
-        strncpy(_suite_path, suite_paths[0], sizeof(_suite_path));
+    if (num_library_paths > 0){
+        strncpy(_library_path, library_paths[0], sizeof(_library_path));
     }
-    if (num_suite_paths > 1){
-        strncpy(_suite_path2, suite_paths[1], sizeof(_suite_path2));
+    if (num_library_paths > 1){
+        strncpy(_library_path2, library_paths[1], sizeof(_library_path2));
     }
-    if (num_suite_paths > 2){
+    if (num_library_paths > 2){
         printf("Too many paths\n");
         return -1;
     }
@@ -30,16 +30,16 @@ static int _copy_test_params(const char **suite_paths,
     return 0;
 }
 
-static int _copy_list_params(const char **suite_paths,
-                             int num_suite_paths)
+static int _copy_list_params(const char **library_paths,
+                             int num_library_paths)
 {
-    if (num_suite_paths > 0){
-        strncpy(_suite_path, suite_paths[0], sizeof(_suite_path));
+    if (num_library_paths > 0){
+        strncpy(_library_path, library_paths[0], sizeof(_library_path));
     }
-    if (num_suite_paths > 1){
-        strncpy(_suite_path2, suite_paths[1], sizeof(_suite_path2));
+    if (num_library_paths > 1){
+        strncpy(_library_path2, library_paths[1], sizeof(_library_path2));
     }
-    if (num_suite_paths > 2){
+    if (num_library_paths > 2){
         printf("Too many paths\n");
         return -1;
     }
@@ -76,7 +76,7 @@ static bool _check_options(const struct chili_test_options *a,
 
 int each_before()
 {
-    memset(_suite_path, 0, sizeof(_suite_path));
+    memset(_library_path, 0, sizeof(_library_path));
     memset(&_options, 0, sizeof(_options));
     stub_command_test = _copy_test_params;
     stub_command_list = _copy_list_params;
@@ -94,7 +94,7 @@ int test_test_only_suite()
 
     main(argc, argv);
 
-    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+    if (strncmp(_library_path, argv[2], sizeof(_library_path)) != 0){
         printf("Path to suite is wrong.\n");
         return 0;
     }
@@ -112,11 +112,11 @@ int test_test_several_suites()
 
     main(argc, argv);
 
-    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+    if (strncmp(_library_path, argv[2], sizeof(_library_path)) != 0){
         printf("Path to first suite is wrong.\n");
         return 0;
     }
-    if (strncmp(_suite_path2, argv[3], sizeof(_suite_path2)) != 0){
+    if (strncmp(_library_path2, argv[3], sizeof(_library_path2)) != 0){
         printf("Path to second suite is wrong.\n");
         return 0;
     }
@@ -173,7 +173,7 @@ int test_list_only_suite()
 
     main(argc, argv);
 
-    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+    if (strncmp(_library_path, argv[2], sizeof(_library_path)) != 0){
         printf("Path to suite is wrong.\n");
         return 0;
     }
@@ -191,11 +191,11 @@ int test_list_several_suites()
 
     main(argc, argv);
 
-    if (strncmp(_suite_path, argv[2], sizeof(_suite_path)) != 0){
+    if (strncmp(_library_path, argv[2], sizeof(_library_path)) != 0){
         printf("Path to first suite is wrong.\n");
         return 0;
     }
-    if (strncmp(_suite_path2, argv[3], sizeof(_suite_path2)) != 0){
+    if (strncmp(_library_path2, argv[3], sizeof(_library_path2)) != 0){
         printf("Path to second suite is wrong.\n");
         return 0;
     }

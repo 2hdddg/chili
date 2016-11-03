@@ -7,16 +7,29 @@ typedef int (*chili_func)(void);
 
 struct chili_bind_fixture
 {
+    /* Function to call once, before
+     * any test */
     chili_func once_before;
+    /* Function to call once, after
+     * all tests been executed. */
     chili_func once_after;
+    /* Function to call before a test
+     * function is executed */
     chili_func each_before;
+    /* Function to call after a test
+     * has executed. */
     chili_func each_after;
 };
 
 struct chili_bind_test
 {
+    /* Test function */
     chili_func func;
+    /* Name of test */
     const char *name;
+    /* Name and path to library
+     * containing test */
+    const char *library;
 };
 
 
@@ -32,9 +45,9 @@ int chili_bind_create(const char *path,
                       chili_handle *handle);
 
 /**
- * @brief Returns fixture
+ * @brief Returns bound fixture.
  *
- * @return void
+ * @return Negative on error, positive on success.
  */
 int chili_bind_fixture(chili_handle handle,
                        struct chili_bind_fixture *fixture);
@@ -42,8 +55,7 @@ int chili_bind_fixture(chili_handle handle,
 /**
  * @brief Binds next test in suite.
  *
- * @return Negative on error, positive on success, zero if
- *         no more tests exists in suite.
+ * @return Negative on error, positive on success.
  */
 int chili_bind_test(chili_handle handle,
                     int index,
@@ -52,7 +64,6 @@ int chili_bind_test(chili_handle handle,
 /**
  * @brief Releases all resources held by the module.
  *
- * @return Negative on error, positive on success.
  */
 void chili_bind_destroy(chili_handle handle);
 

@@ -6,11 +6,16 @@
 #include "bind.h"
 
 struct instance {
+    /* Path and name of library */
+    const char *lib_path;
+    /* Handle returned from dlopen */
     void *lib_handle;
+
     const struct chili_suite *suite;
 };
 
-static chili_func _get_func(void *lib_handle, const char *name)
+static chili_func _get_func(void *lib_handle,
+                            const char *name)
 {
     chili_func f;
 
@@ -21,7 +26,8 @@ static chili_func _get_func(void *lib_handle, const char *name)
     return f;
 }
 
-static int _bind_func(void *lib_handle, const char *name,
+static int _bind_func(void *lib_handle,
+                      const char *name,
                       chili_func *func)
 {
     if (name){
@@ -56,12 +62,11 @@ int chili_bind_create(const char *path,
         goto onerror;
     }
 
+    instance->lib_path = path;
     instance->lib_handle = lib_handle;
-
-
     instance->suite = suite;
-    *handle = instance;
 
+    *handle = instance;
     return 1;
 
 onerror:
@@ -127,6 +132,7 @@ int chili_bind_test(chili_handle handle,
         return -1;
     }
     bind_test->name = name;
+    bind_test->library = instance->lib_path;
 
     return 1;
 }
