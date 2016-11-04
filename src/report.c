@@ -97,36 +97,42 @@ static void _print_test(struct chili_result *result)
     bool print_captured_output = true;
 
     if (result->before == fixture_error){
-        printf("%s%s:%s: Test fixture setup error%s\n",
-               _color_fail, result->library, result->name,
+        printf("%s%s: %s: Test fixture setup error [%d]%s\n",
+               _color_fail,
+                result->library, result->name, result->identity,
                 _color_reset);
     }
     else if (result->after == fixture_error){
-        printf("%s%s:%s: Test fixture teardown error%s\n",
-               _color_fail, result->library, result->name, 
-               _color_reset);
+        printf("%s%s: %s: Test fixture teardown error [%d]%s\n",
+               _color_fail,
+                result->library, result->name, result->identity,
+                _color_reset);
     }
     else{
         switch (result->test){
             case test_uncertain:
-                printf("%s%s:%s: Uncertain result%s\n",
-                       _color_fail, result->library, result->name,
-                       _color_reset);
+                printf("%s%s: %s: Uncertain result [%d]%s\n",
+                       _color_fail,
+                        result->library, result->name, result->identity,
+                        _color_reset);
                 break;
             case test_error:
-                printf("%s%s:%s: Error%s\n",
-                       _color_fail, result->library, result->name,
-                       _color_reset);
+                printf("%s%s: %s: Error [%d]%s\n",
+                       _color_fail,
+                        result->library, result->name, result->identity,
+                        _color_reset);
                 break;
             case test_failure:
-                printf("%s%s:%s: Failed%s\n",
-                       _color_fail, result->library, result->name,
-                       _color_reset);
+                printf("%s%s: %s: Failed [%d]%s\n",
+                       _color_fail,
+                        result->library, result->name, result->identity,
+                        _color_reset);
                 break;
             case test_success:
-                printf("%s%s:%s: Success%s\n",
-                       _color_success, result->library, result->name,
-                       _color_reset);
+                printf("%s%s: %s: Success [%d]%s\n",
+                       _color_success,
+                        result->library, result->name, result->identity,
+                        _color_reset);
                 print_captured_output = false;
                 break;
         }
@@ -145,23 +151,27 @@ static void _print_result(struct chili_result *result)
 
     switch (result->execution){
         case execution_not_started:
-            printf("%s%s:%s: Not started%s\n",
-                   _color_fail, result->library, result->name,
-                   _color_reset);
+            printf("%s%s: %s: Not started [%d]%s\n",
+                   _color_fail,
+                    result->library, result->name, result->identity,
+                    _color_reset);
             break;
         case execution_unknown_error:
-            printf("%s%s:%s: Unknown error%s\n",
-                   _color_fail, result->library, result->name,
-                   _color_reset);
+            printf("%s%s: %s: Unknown error [%d]%s\n",
+                   _color_fail,
+                    result->library, result->name, result->identity,
+                    _color_reset);
             break;
         case execution_crashed:
-            printf("%s%s:%s: Crashed%s\n",
-                   _color_fail, result->library, result->name,
+            printf("%s%s: %s: Crashed [%d]%s\n",
+                   _color_fail,
+                    result->library, result->name, result->identity,
                     _color_reset);
             break;
         case execution_timed_out:
-            printf("%s%s:%s: Timed out%s\n",
-                   _color_fail, result->library, result->name,
+            printf("%s%s: %s: Timed out [%d]%s\n",
+                   _color_fail,
+                    result->library, result->name, result->identity,
                     _color_reset);
             break;
         case execution_done:
@@ -201,7 +211,7 @@ void chili_report_test_begin(const char *library,
                              const char *name)
 {
     if (_report->use_cursor){
-        printf("Running test %s:%s\n", library, name);
+        printf("Running test %s: %s\n", library, name);
     }
 }
 

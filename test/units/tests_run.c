@@ -203,10 +203,12 @@ static const char* _fixture_str(enum fixture_result f)
 static void _print_result(const struct chili_result *r)
 {
     printf("chili_result:\n"
+           "\tidentity: %d\n"
            "\texecution: %s\n"
            "\tbefore: %s\n"
            "\ttest: %s\n"
            "\tafter: %s\n",
+           r->identity,
            _execution_str(r->execution), _fixture_str(r->before),
            _test_str(r->test), _fixture_str(r->after));
 }
@@ -614,4 +616,27 @@ int test_run_test_aggregated_after_timeout()
            _aggregated.num_succeeded == 0 &&
            _aggregated.num_failed == 0 &&
            _aggregated.num_total == 1;
+}
+
+/* Verifies that each executed tests get
+ * a new identity.
+ */
+int test_run_test_assigns_identity()
+{
+    int identity1;
+    int identity2;
+
+    chili_run_before(&_fixture);
+
+    _test.func = _succeeding_test;
+    chili_run_test(&_result, &_aggregated, &_test, &_fixture,
+                   &_times, _progress);
+    _print_result(&_result);
+    identity1 = _result.identity;
+    chili_run_test(&_result, &_aggregated, &_test, &_fixture,
+                   &_times, _progress);
+    _print_result(&_result);
+    identity2 = _result.identity;
+
+    return identity1 < identity2;
 }

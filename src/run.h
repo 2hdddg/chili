@@ -54,8 +54,12 @@ enum execution_result {
  * test setup, the test itself and cleanup.
  */
 struct chili_result {
+    /* Name of test */
     const char            *name;
+    /* Name of library containing test */
     const char            *library;
+    /* Unique identity of test */
+    int                   identity;
     enum execution_result execution;
     enum fixture_result   before;
     enum test_result      test;
@@ -64,8 +68,8 @@ struct chili_result {
 
 /**
  * @brief Aggregated result of all executed tests
-          so far.
-*/
+ *        so far.
+ */
 struct chili_aggregated {
     int num_succeeded;
     int num_failed;
@@ -99,7 +103,7 @@ int chili_run_before(const struct chili_bind_fixture *fixture);
  * @return Negative on error, positive on success.
  *         Success doesnt mean that the test succeeded only
  *         that no errors occured.
-*/
+ */
 int chili_run_test(struct chili_result *result,
                    struct chili_aggregated *aggregated,
                    const struct chili_bind_test *test,

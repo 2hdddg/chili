@@ -21,6 +21,9 @@ struct child_result {
     enum fixture_result  after;
 };
 
+/* Globals */
+static int _next_identity = 0;
+
 /* Locals */
 static void _sigchld_handler(int sig, siginfo_t *info, void* context)
 {
@@ -268,10 +271,11 @@ int chili_run_test(struct chili_result *result,
                    chili_progress test_progress)
 {
     result->execution = execution_not_started;
-    result->before = result->after = fixture_uncertain;
-    result->test = test_uncertain;
-    result->name = test->name;
-    result->library = test->library;
+    result->before    = result->after = fixture_uncertain;
+    result->test      = test_uncertain;
+    result->name      = test->name;
+    result->library   = test->library;
+    result->identity  = _next_identity++;
 
     debug_print("Preparing to run %s\n", result->name);
 
