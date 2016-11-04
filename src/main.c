@@ -32,11 +32,10 @@ static void _display_test_usage()
          "to be invoked.\n"
          "\n"
          "Options are:\n"
-         "  -c --color         use colored output\n"
-         "  -m --cursor        minimize output on console,\n"
-         "                     moves cursor\n"
-         "  -r --redirect\n"
-         "  -i --interactive   short for -c -m -r\n");
+         "  -c --color         Use colored output.\n"
+         "  -m --cursor        Minimize output on console,\n"
+         "                     moves cursor.\n"
+         "  -i --interactive   Short for -c -m.\n");
 }
 
 static void _display_list_usage()
@@ -53,22 +52,23 @@ static int _handle_test_command(int argc, char *argv[])
     int c;
     const char **suite_paths;
     int num_suite_paths = 0;
-    const char *short_options = "icmnrh:";
+    const char *short_options = "icmnh:";
     const struct option long_options[] = {
-        /*   Turns on color, cursor movements and redirect.
-         *   Default path for redirect is ./chili_log */
+        /*   Turns on color, cursor movements. */
         { "interactive", no_argument,       0, 'i' },
         { "color",       no_argument,       0, 'c' },
         { "cursor",      no_argument,       0, 'm' },
         { "nice",        no_argument,       0, 'n' },
-        { "redirect",    required_argument, 0, 'r' },
         { "help",        no_argument,       0, 'h' },
     };
     int index;
-    int len;
     struct chili_test_options options;
 
     memset(&options, 0, sizeof(options));
+
+    /* Default to redirect test output to local directory */
+    strcpy(options.redirect_path, "./chili_log");
+    options.use_redirect = true;
 
     do {
         c = getopt_long(argc, argv, short_options,
@@ -77,9 +77,7 @@ static int _handle_test_command(int argc, char *argv[])
             case 'i':
                 options.use_color = true;
                 options.use_cursor = true;
-                options.use_redirect = true;
                 options.nice_stats = true;
-                strcpy(options.redirect_path, "./chili_log");
                 break;
             case 'c':
                 options.use_color = true;
@@ -89,15 +87,6 @@ static int _handle_test_command(int argc, char *argv[])
                 break;
             case 'n':
                 options.nice_stats = true;
-                break;
-            case 'r':
-                len = strlen(optarg);
-                if (len >= CHILI_REDIRECT_MAX_PATH){
-                    printf("Too long redirect path\n");
-                    return -1;
-                }
-                options.use_redirect = true;
-                strcpy(options.redirect_path, optarg);
                 break;
             case 'h':
                 _display_test_usage();

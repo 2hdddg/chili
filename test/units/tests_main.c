@@ -135,7 +135,7 @@ int test_test_options_defaults()
     struct chili_test_options options = {
         .use_color = false,
         .use_cursor = false,
-        .use_redirect = false,
+        .use_redirect = true,
         .nice_stats = false
     };
 
