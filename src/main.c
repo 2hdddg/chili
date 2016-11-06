@@ -14,12 +14,12 @@
 static void _display_usage()
 {
     puts("chili - test runner\n"
-         "Usage: chili COMMAND [OPTIONS]... FILE\n"
+         "Usage: chili COMMAND [OPTIONS]...\n"
          "COMMAND is command to invoke, typically test.\n"
          "\n"
          "Valid commands are:\n"
-         "  test    Runs test in specified shared library\n"
-         "  list    Lists tests in specified shared library\n"
+         "  test    Runs test in specified shared libraries\n"
+         "  list    Lists tests in specified shared libraries\n"
          "  help    Shows help about a specified command\n");
 }
 
@@ -27,9 +27,10 @@ static void _display_test_usage()
 {
     puts("chili - test runner\n"
          "Test command, runs tests\n"
-         "Usage: chili test [OPTIONS]... FILE\n"
-         "FILE is a shared library containing tests\n"
-         "to be invoked.\n"
+         "Usage: chili test [OPTIONS]... LIBRARY [..]\n"
+         "LIBRARY is a shared library containing tests\n"
+         "to be invoked. More than one library can be\n"
+         "specified."
          "\n"
          "Options are:\n"
          "  -c --color         Use colored output.\n"
@@ -42,10 +43,10 @@ static void _display_list_usage()
 {
     puts("chili - test runner\n"
          "List command, lists tests.\n"
-         "Usage: chili list FILE\n"
-         "FILE is a shared library containing tests\n"
-         "to be invoked.\n"
-         "\n");
+         "Usage: chili list LIBRARY [..]\n"
+         "LIBRARY is a shared library containing tests\n"
+         "to be invoked. More than one library can be\n"
+         "specifed\n");
 }
 static int _handle_test_command(int argc, char *argv[])
 {
@@ -147,6 +148,24 @@ static int _handle_list_command(int argc, char *argv[])
     return chili_command_list(suite_paths, num_suite_paths);
 }
 
+static int _handle_help_command(int argc, char *argv[])
+{
+    const char *command = argv[1];
+
+    if (strcmp(command, "test") == 0){
+        _display_test_usage();
+        return 1;
+    }
+
+    if (strcmp(command, "list") == 0){
+        _display_list_usage();
+        return 1;
+    }
+
+    printf("Unknown help topic: %s\n", command);
+    return -1;
+}
+
 int main(int argc, char *argv[])
 {
     const char *command;
@@ -168,6 +187,10 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(command, "list") == 0){
         return _handle_list_command(argc, argv) >= 0 ?
+            0 : 1;
+    }
+    else if (strcmp(command, "help") == 0){
+        return _handle_help_command(argc, argv) >= 0 ?
             0 : 1;
     }
 
