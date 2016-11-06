@@ -91,7 +91,9 @@ static void _aggregate(const struct chili_result *result,
 static int _child_write_result(chili_func each_before,
                                chili_func test,
                                chili_func each_after,
-                               const char *name, int result_pipe)
+                               const char *name,
+                               const char *redirect_name,
+                               int result_pipe)
 {
     int written;
     struct child_result result = {
@@ -104,7 +106,7 @@ static int _child_write_result(chili_func each_before,
 
     /* Everything written to stdout in tests might be
      * redirected somewhere else */
-    chili_redirect_start(name);
+    chili_redirect_start(redirect_name);
 
     result.before = evaluate_fixture(each_before);
     if (result.before != fixture_error){
@@ -189,6 +191,7 @@ static int _fork_and_run(chili_func each_before,
     int pipes[2];
     sigset_t blocked_signals;
     int status;
+    char identity[25];
 
     if (pipe(pipes) < 0){
         printf("Failed to create pipe: %s\n", strerror(errno));
@@ -208,9 +211,10 @@ static int _fork_and_run(chili_func each_before,
         return -1;
     }
 
+    snprintf(identity, 25, "%d", result->identity);
     if (child == 0){
         _child_write_result(each_before, test, each_after,
-                            result->name, pipes[1]);
+                            result->name, identity, pipes[1]);
         /* Exit child here ! */
         debug_print("Exiting process %d\n", getpid());
         _exit(0);
