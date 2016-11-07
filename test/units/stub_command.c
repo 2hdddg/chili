@@ -3,12 +3,12 @@
 #include "stub_command.h"
 
 
-int chili_command_test(const char **library_paths,
-                       int num_library_paths,
-                       const struct chili_test_options *options)
+int chili_command_all(const char **library_paths,
+                      int num_library_paths,
+                      const struct chili_test_options *options)
 {
-    return stub_command_test(library_paths, num_library_paths,
-                             options);
+    return stub_command_all(library_paths, num_library_paths,
+                            options);
 }
 
 int chili_command_list(const char **library_paths,

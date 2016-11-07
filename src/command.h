@@ -33,9 +33,9 @@ struct chili_test_options {
  *         Zero when all tests succeeded.
  *         Positive on test error/failure.
  */
-int chili_command_test(const char **library_paths,
-                       int num_libraries,
-                       const struct chili_test_options *options);
+int chili_command_all(const char **library_paths,
+                      int num_libraries,
+                      const struct chili_test_options *options);
 
 /**
  * @brief Prints list of tests in suite.

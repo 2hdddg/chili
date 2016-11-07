@@ -6,7 +6,7 @@ SOURCES=$(wildcard ../../src/*.c)
 OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
-CHILI=../../chili test -i
+CHILI=../../chili all -i
 SUITES=chili_run.so chili_main.so chili_suite.so
 SUITE_PATHS=$(SUITES:%=./%)
 

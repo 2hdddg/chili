@@ -80,7 +80,7 @@ static const char *_bool_str(bool b)
     return b ? "true" : "false";
 }
 
-int chili_command_test(const char **library_paths,
+int chili_command_all(const char **library_paths,
                        int num_libraries,
                        const struct chili_test_options *options)
 {
@@ -89,7 +89,7 @@ int chili_command_test(const char **library_paths,
     struct chili_aggregated aggregated = { 0 };
     chili_handle lib_handle;
 
-    debug_print("Running test command with options:\n"
+    debug_print("Running all command with options:\n"
                 "\tuse_color: %s\n"
                 "\tuse_cursor: %s\n"
                 "\tuse_redirect: %s\n"

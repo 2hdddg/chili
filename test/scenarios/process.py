@@ -8,27 +8,27 @@ import subprocess
 import os
 import sys
 
-from runner import run, chili_test
+from runner import run, chili_all
 
 
 def test_process_returns_0_on_test_success():
-    report = chili_test(['./chili_success.so'])
+    report = chili_all(['./chili_success.so'])
     return report.process_return == 0 and report.num_succeeded > 0
 
 def test_process_returns_non_0_on_test_failure():
-    report = chili_test(['./chili_failure.so'])
+    report = chili_all(['./chili_failure.so'])
     return report.process_return != 0 and report.num_failed > 0
 
 def test_process_returns_non_0_on_suite_setup_error():
-    report = chili_test(['./chili_suite_setup_error.so'])
+    report = chili_all(['./chili_suite_setup_error.so'])
     return report.process_return != 0 and report.num_executed == 0
 
 def test_process_returns_non_0_when_no_test_suite():
-    report = chili_test([])
+    report = chili_all([])
     return report.process_return != 0
 
 def test_process_returns_non_0_when_test_suite_doesnt_exist():
-    report = chili_test(['./non_existent.so'])
+    report = chili_all(['./non_existent.so'])
     return report.process_return != 0
 
 if __name__ == "__main__":

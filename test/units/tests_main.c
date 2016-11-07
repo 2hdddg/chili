@@ -78,7 +78,7 @@ int each_before()
 {
     memset(_library_path, 0, sizeof(_library_path));
     memset(&_options, 0, sizeof(_options));
-    stub_command_test = _copy_test_params;
+    stub_command_all = _copy_test_params;
     stub_command_list = _copy_list_params;
 
     return 1;
@@ -87,9 +87,9 @@ int each_before()
 /* Verifies that suite path is parsed correcly when no
  * other parameters specified.
  */
-int test_test_only_suite()
+int test_all_only_suite()
 {
-    char *argv[] = {"executable", "test", "a.so" };
+    char *argv[] = {"executable", "all", "a.so" };
     int argc = sizeof(argv) / sizeof(char*);
 
     main(argc, argv);
@@ -105,9 +105,9 @@ int test_test_only_suite()
 /* Verifies that more than one suite can be specified
  * to the test command
  */
-int test_test_several_suites()
+int test_all_several_suites()
 {
-    char *argv[] = {"executable", "test", "a.so", "b.so" };
+    char *argv[] = {"executable", "all", "a.so", "b.so" };
     int argc = sizeof(argv) / sizeof(char*);
 
     main(argc, argv);
@@ -127,9 +127,9 @@ int test_test_several_suites()
 /* Verifies option defaults when using minimal parameters to
  * test command.
  */
-int test_test_options_defaults()
+int test_all_options_defaults()
 {
-    char *argv[] = {"executable", "test", "a.so" };
+    char *argv[] = {"executable", "all", "a.so" };
     int argc = sizeof(argv) / sizeof(char*);
     /* Option defaults is for non-interactive consumption */
     struct chili_test_options options = {
@@ -146,9 +146,9 @@ int test_test_options_defaults()
 
 /* Verifies options when requesting interactive mode.
  */
-int test_test_options_interactive()
+int test_all_options_interactive()
 {
-    char *argv[] = {"executable", "test", "-i", "a.so" };
+    char *argv[] = {"executable", "all", "-i", "a.so" };
     int argc = sizeof(argv) / sizeof(char*);
     /* Option defaults is for interactive consumption */
     struct chili_test_options options = {

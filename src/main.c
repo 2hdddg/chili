@@ -18,16 +18,16 @@ static void _display_usage()
          "COMMAND is command to invoke, typically test.\n"
          "\n"
          "Valid commands are:\n"
-         "  test    Runs test in specified shared libraries\n"
+         "  all     Runs all tests in specified shared libraries\n"
          "  list    Lists tests in specified shared libraries\n"
          "  help    Shows help about a specified command\n");
 }
 
-static void _display_test_usage()
+static void _display_all_usage()
 {
     puts("chili - test runner\n"
-         "Test command, runs tests\n"
-         "Usage: chili test [OPTIONS]... LIBRARY [..]\n"
+         "All command, runs tests\n"
+         "Usage: chili all [OPTIONS]... LIBRARY [..]\n"
          "LIBRARY is a shared library containing tests\n"
          "to be invoked. More than one library can be\n"
          "specified."
@@ -48,7 +48,7 @@ static void _display_list_usage()
          "to be invoked. More than one library can be\n"
          "specifed\n");
 }
-static int _handle_test_command(int argc, char *argv[])
+static int _handle_all_command(int argc, char *argv[])
 {
     int c;
     const char **suite_paths;
@@ -90,7 +90,7 @@ static int _handle_test_command(int argc, char *argv[])
                 options.nice_stats = true;
                 break;
             case 'h':
-                _display_test_usage();
+                _display_all_usage();
                 return -1;
         }
     } while (c != -1);
@@ -108,7 +108,7 @@ static int _handle_test_command(int argc, char *argv[])
     /* Need to reset to be able to parse again */
     optind = 0;
 
-    return chili_command_test(suite_paths, num_suite_paths, &options);
+    return chili_command_all(suite_paths, num_suite_paths, &options);
 }
 
 static int _handle_list_command(int argc, char *argv[])
@@ -152,8 +152,8 @@ static int _handle_help_command(int argc, char *argv[])
 {
     const char *command = argv[1];
 
-    if (strcmp(command, "test") == 0){
-        _display_test_usage();
+    if (strcmp(command, "all") == 0){
+        _display_all_usage();
         return 1;
     }
 
@@ -181,8 +181,8 @@ int main(int argc, char *argv[])
     argc = argc - 1;
     argv = argv + 1;
 
-    if (strcmp(command, "test") == 0){
-        return _handle_test_command(argc, argv) > 0 ?
+    if (strcmp(command, "all") == 0){
+        return _handle_all_command(argc, argv) > 0 ?
             0 : 1;
     }
     else if (strcmp(command, "list") == 0){
