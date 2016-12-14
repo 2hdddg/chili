@@ -13,7 +13,7 @@
 #include "symbols.h"
 
 /* Debugging */
-#define DEBUG 0
+#define DEBUG_PRINTS 0
 #include "debug.h"
 
 /* Types */

@@ -223,4 +223,6 @@ void chili_lib_destroy(chili_handle handle)
     chili_bind_destroy(instance->bind_handle);
     chili_suite_destroy(instance->suite_handle);
     chili_sym_destroy(instance->sym_handle);
+
+    free(instance);
 }
