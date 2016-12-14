@@ -55,6 +55,25 @@ def chili_all(options=[], print_stdout=False, print_stderr=False):
     report = parse_report(result)
     return report
 
+def chili_named(tests, options=[], print_stdout=False, print_stderr=False):
+    params = [CHILI, 'named']
+    params.extend(options)
+    tests = '\n'.join(tests) + '\n'
+
+    process = Popen(params, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    stdoutdata, stderrdata = process.communicate(tests)
+
+    if print_stdout:
+        print(stdoutdata)
+    if print_stderr:
+        print(stderrdata)
+
+    result = Result(returncode = process.returncode,
+                    stdoutdata = stdoutdata,
+                    stderrdata = stderrdata)
+    report = parse_report(result)
+    return report
+
 def parse_report(result):
     pattern = ("Executed:\ (\d*)\,\ Succeeded:\ (\d*)\, "
               "Failed:\ (\d*)\, Errors:\ (\d*)")

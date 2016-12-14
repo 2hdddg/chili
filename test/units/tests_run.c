@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "run.h"
+#include "assert.h"
 
 
 struct chili_bind_fixture _fixture;
@@ -135,19 +136,6 @@ static void _timestamped_progress(const char *library,
 static void _progress(const char *library,
                       const char *name)
 {
-}
-
-static bool _less_than(struct timespec *a, struct timespec *b)
-{
-    if (a->tv_sec < b->tv_sec){
-        return true;
-    }
-
-    if (a->tv_sec == b->tv_sec){
-        return a->tv_nsec < b->tv_nsec;
-    }
-
-    return false;
 }
 
 static const char* _execution_str(enum execution_result e)
@@ -319,8 +307,8 @@ int test_run_test_calls_progress_hook()
                    &_times, _timestamped_progress);
 
     chili_run_after(&_fixture);
-    return _less_than(_progress_time, _fixture_time) &&
-           _less_than(_fixture_time, _test_time);
+    return assert_timespec_less_than(_progress_time, _fixture_time) &&
+           assert_timespec_less_than(_fixture_time, _test_time);
 }
 
 /* Verifies result when before fixture

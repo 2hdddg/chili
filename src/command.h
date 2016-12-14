@@ -22,7 +22,9 @@ struct chili_test_options {
 };
 
 /**
- * @brief Runs tests
+ * @brief Runs all tests
+ *
+ * Runs all tests in specified shared libraries.
  *
  * @param library_paths Array of paths to shared library containing
  *                      tests.
@@ -36,6 +38,26 @@ struct chili_test_options {
 int chili_command_all(const char **library_paths,
                       int num_libraries,
                       const struct chili_test_options *options);
+
+/**
+ * @brief Runs named tests
+ *
+ * Runs named tests read from file.
+ * Tests are executed in the order they are read from
+ * file.
+ *
+ * @param names_path    Path to file containing names
+ *                      of tests to run. If set to null
+ *                      stdin is used instead.
+ * @param options       Options to use when running tests.
+ *
+ * @return Negative on error.
+ *         Zero when all tests succeeded.
+ *         Positive on test error/failure.
+ */
+int chili_command_named(const char *names_path,
+                        const struct chili_test_options *options);
+
 
 /**
  * @brief Prints list of tests in suite.

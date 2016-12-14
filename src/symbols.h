@@ -17,7 +17,7 @@
  *
  * @return Negative on error.
  *         Positive on success.
-*/
+ */
 int chili_sym_create(const char *path, int *count, chili_handle *handle);
 
 /**
@@ -29,7 +29,7 @@ int chili_sym_create(const char *path, int *count, chili_handle *handle);
  * @return Negative on error.
  *         Zero on end of symbols
  *         Positive on success.
-*/
+ */
 int chili_sym_next(chili_handle handle, char **name);
 
 /**
@@ -39,5 +39,5 @@ int chili_sym_next(chili_handle handle, char **name);
  * instance are invalid after this call.
  *
  * @param handle Valid module handle.
-*/
+ */
 void chili_sym_destroy(chili_handle handle);

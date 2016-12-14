@@ -41,7 +41,7 @@ int chili_lib_before_fixture(chili_handle handle);
  *         no more tests exists in suite.
  *
  *         Note that a positive return value does not mean
- *         that the test passed or failed, just that the
+ *         that the test passed or failed, just that
  *         chili was able to execute it.
  */
 int chili_lib_next_test(chili_handle handle,
@@ -56,10 +56,14 @@ int chili_lib_next_test(chili_handle handle,
  * @return Negative on error, positive on success.
  *
  *         Note that a positive return value does not mean
- *         that the test passed or failed, just that the
+ *         that the test passed or failed, just that
  *         chili was able to execute it.
  */
-int chili_lib_named_test(chili_handle handle, const char *name);
+int chili_lib_named_test(chili_handle handle,
+                         const char *name,
+                         struct chili_times *times,
+                         struct chili_result *result,
+                         struct chili_aggregated *aggregated);
 
 /**
  * @brief Finishes test execution in this library.

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "symbols.h"
 #include "suite.h"
@@ -17,7 +18,7 @@ struct instance {
     chili_handle suite_handle;
     /* Binder handle */
     chili_handle bind_handle;
-    /* Extraced suite */
+    /* Extracted suite */
     const struct chili_suite *suite;
     /* Extraxted ficture */
     struct chili_bind_fixture fixture;
@@ -49,6 +50,37 @@ static int _build_suite(chili_handle sym_handle,
     } while (true);
 
     return 1;
+}
+
+static int _find_test(const struct chili_suite *suite,
+                      const char *name)
+{
+    for (int i = 0; i < suite->count; i++){
+        if (strcmp(suite->tests[i], name) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int _run_test(struct instance *instance,
+                     int index,
+                     struct chili_times *times,
+                     struct chili_result *result,
+                     struct chili_aggregated *aggregated)
+{
+    int r;
+    struct chili_bind_test test;
+
+    r = chili_bind_test(instance->bind_handle, index, &test);
+    if (r <= 0){
+        return r;
+    }
+
+    r = chili_run_test(result, aggregated, &test,
+                       &instance->fixture,
+                       times, instance->report_progress);
+    return r;
 }
 
 int chili_lib_create(const char *path,
@@ -129,7 +161,6 @@ int chili_lib_next_test(chili_handle handle,
                         struct chili_aggregated *aggregated)
 {
     struct instance *instance = (struct instance*)handle;
-    struct chili_bind_test test;
     int r;
     int index = *pindex;
 
@@ -138,29 +169,35 @@ int chili_lib_next_test(chili_handle handle,
         return 0;
     }
 
-    r = chili_bind_test(instance->bind_handle, index, &test);
-    if (r <= 0){
-        /* Fatal error, can not continue or last test
-         * has already executed, no more (0)  */
-        return r;
+    r = _run_test(instance, index,
+                  times, result, aggregated);
+    if (r > 0){
+        *pindex = index + 1;
     }
 
-    r = chili_run_test(result, aggregated, &test,
-                       &instance->fixture,
-                       times, instance->report_progress);
-    if (r < 0){
-        /* Fatal error, can not continue */
-        return r;
-    }
-
-    *pindex = index + 1;
-
-    return 1;
+    return r;
 }
 
-int chili_lib_named_test(chili_handle handle, const char *name)
+int chili_lib_named_test(chili_handle handle,
+                         const char *name,
+                         struct chili_times *times,
+                         struct chili_result *result,
+                         struct chili_aggregated *aggregated)
 {
-    return 0;
+    struct instance *instance = (struct instance*)handle;
+    int r;
+    int index;
+
+    index = _find_test(instance->suite, name);
+    if (index < 0){
+        printf("Unable to find test %s\n", name);
+        return -1;
+    }
+
+    r = _run_test(instance, index,
+                  times, result, aggregated);
+
+    return r;
 }
 
 int chili_lib_after_fixture(chili_handle handle)

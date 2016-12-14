@@ -6,6 +6,8 @@
 int (*stub_command_all)(const char **library_path,
                         int num_library_paths,
                         const struct chili_test_options *options);
+int (*stub_command_named)(const char *names_path,
+                          const struct chili_test_options *options);
 int (*stub_command_list)(const char **library_paths,
                          int num_library_paths);
 

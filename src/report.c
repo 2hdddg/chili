@@ -92,6 +92,16 @@ static void _print_stats(struct chili_aggregated *aggregated)
           aggregated->num_errors, _color_reset);
 }
 
+static void _print_captured(struct chili_result *result)
+{
+    char identity[25];
+
+    snprintf(identity, 25, "%d", result->identity);
+    chili_redirect_print(identity,
+        ">>> Capture start\n",
+        "<<< Capture end\n");
+}
+
 static void _print_test(struct chili_result *result)
 {
     bool print_captured_output = true;
@@ -139,9 +149,7 @@ static void _print_test(struct chili_result *result)
     }
 
     if (print_captured_output){
-        chili_redirect_print(result->name,
-            ">>> Capture start\n",
-            "<<< Capture end\n");
+        _print_captured(result);
     }
 }
 
@@ -181,9 +189,7 @@ static void _print_result(struct chili_result *result)
     }
 
     if (print_captured_output){
-        chili_redirect_print(result->name,
-            ">>> Capture start\n",
-            "<<< Capture end\n");
+        _print_captured(result);
     }
 }
 

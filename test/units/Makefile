@@ -7,7 +7,7 @@ OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
 CHILI=../../chili all -i
-SUITES=chili_run.so chili_main.so chili_suite.so
+SUITES=chili_run.so chili_main.so chili_suite.so chili_named.so chili_registry.so
 SUITE_PATHS=$(SUITES:%=./%)
 
 ifeq ($(DEBUG), 1)
@@ -43,11 +43,11 @@ $(DEPS): out/%.d: ../../src/%.c
 	@echo Analyzing dependencies for $<
 	@$(CC) -MM $(CPPFLAGS) -MT '$@ $(basename $@).o' $< > $@;
 
-chili_run.so: tests_run.o out/run.o out/redirect.o
+chili_run.so: tests_run.o out/run.o out/redirect.o assert.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
 
-chili_main.so: tests_main.o out/main.o stub_command.o
+chili_main.so: tests_main.o out/main.o stub_command.o assert.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
 
@@ -55,6 +55,13 @@ chili_suite.so: tests_suite.o out/suite.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
 
+chili_named.so: tests_named.o out/named.o assert.o
+	@echo Linking $@
+	@$(LD) $(LDFLAGS) $^ -o $@
+
+chili_registry.so: tests_registry.o out/registry.o assert.o
+	@echo Linking $@
+	@$(LD) $(LDFLAGS) $^ -o $@
 
 .PHONY: clean
 clean:
