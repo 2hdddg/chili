@@ -83,6 +83,21 @@ static int _run_test(struct instance *instance,
     return r;
 }
 
+static int _debug_test(struct instance *instance,
+                       chili_handle debugger,
+                       int index)
+{
+    int r;
+    struct chili_bind_test test;
+
+    r = chili_bind_test(instance->bind_handle, index, &test);
+    if (r <= 0){
+        return r;
+    }
+
+    return chili_run_debug(debugger, &test, &instance->fixture);
+}
+
 int chili_lib_create(const char *path,
                      chili_progress report_progress,
                      chili_handle *handle)
@@ -196,6 +211,25 @@ int chili_lib_named_test(chili_handle handle,
 
     r = _run_test(instance, index,
                   times, result, aggregated);
+
+    return r;
+}
+
+int chili_lib_debug_test(chili_handle handle,
+                         chili_handle debugger,
+                         const char *name)
+{
+    struct instance *instance = (struct instance*)handle;
+    int r;
+    int index;
+
+    index = _find_test(instance->suite, name);
+    if (index < 0){
+        printf("Unable to find test %s\n", name);
+        return -1;
+    }
+
+    r = _debug_test(instance, debugger, index);
 
     return r;
 }

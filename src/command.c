@@ -8,6 +8,7 @@
 #include "command.h"
 #include "registry.h"
 #include "named.h"
+#include "debugger.h"
 
 /* Debugging */
 #define DEBUG_PRINTS 0
@@ -196,6 +197,34 @@ static int _invoke_named_test(struct chili_aggregated *aggregated,
     return r;
 }
 
+static int _debug_test(chili_handle registry,
+                       chili_handle debugger,
+                       const char *library_path,
+                       const char *test_name)
+{
+    int r;
+    chili_handle lib_handle;
+
+    debug_print("Debugging test: %s:%s\n",
+                library_path, test_name);
+
+    r = _ensure_library(registry, library_path, &lib_handle);
+    if (r < 0){
+        return r;
+    }
+
+    r = chili_lib_debug_test(lib_handle, debugger, test_name);
+    debug_print("Debug named test: %s:%s returned: %d\n",
+                library_path, test_name, r);
+    if (r < 0){
+        printf("Fatal error while debugging test %s:%s.\n",
+               library_path, test_name);
+        return r;
+    }
+
+    return r;
+}
+
 int _close_libraries(chili_handle registry)
 {
     int token = 0;
@@ -222,21 +251,21 @@ int _close_libraries(chili_handle registry)
 
 int chili_command_all(const char **library_paths,
                       int num_libraries,
-                      const struct chili_test_options *options)
+                      const struct chili_test_options *test_options)
 {
     int r;
     struct chili_report report;
     struct chili_aggregated aggregated = { 0 };
     chili_handle lib_handle;
 
-    _option_print("Running 'all' command with options:", options);
+    _option_print("Running 'all' command with options:", test_options);
 
-    report.use_color = options->use_color;
-    report.use_cursor = options->use_cursor;
-    report.nice_stats = options->nice_stats;
+    report.use_color = test_options->use_color;
+    report.use_cursor = test_options->use_cursor;
+    report.nice_stats = test_options->nice_stats;
 
-    r = chili_redirect_begin(options->use_redirect,
-                             options->redirect_path);
+    r = chili_redirect_begin(test_options->use_redirect,
+                             test_options->redirect_path);
     if (r < 0){
         return r;
     }
@@ -255,7 +284,7 @@ int chili_command_all(const char **library_paths,
             goto on_exit;
         }
 
-        r = _run_suite(lib_handle, options, &aggregated);
+        r = _run_suite(lib_handle, test_options, &aggregated);
         chili_lib_destroy(lib_handle);
 
         /* Errors triumphs */
@@ -276,7 +305,7 @@ on_exit:
 }
 
 int chili_command_named(const char *names_path,
-                        const struct chili_test_options *options)
+                        const struct chili_test_options *test_options)
 {
     int r;
     struct chili_report report;
@@ -307,14 +336,14 @@ int chili_command_named(const char *names_path,
         return r;
     }
 
-    _option_print("Running 'named' command with options:", options);
+    _option_print("Running 'named' command with options:", test_options);
 
-    report.use_color = options->use_color;
-    report.use_cursor = options->use_cursor;
-    report.nice_stats = options->nice_stats;
+    report.use_color = test_options->use_color;
+    report.use_cursor = test_options->use_cursor;
+    report.nice_stats = test_options->nice_stats;
 
-    r = chili_redirect_begin(options->use_redirect,
-                             options->redirect_path);
+    r = chili_redirect_begin(test_options->use_redirect,
+                             test_options->redirect_path);
     if (r < 0){
         return r;
     }
@@ -364,6 +393,43 @@ int chili_command_named(const char *names_path,
     chili_report_end(&aggregated);
     chili_redirect_end();
     chili_reg_destroy(registry);
+
+    return r;
+}
+
+int chili_command_debug(const char *chili_path,
+                        char *test_name)
+{
+    int r;
+    chili_handle registry;
+    chili_handle debugger;
+    char *library_path;
+
+    if (test_name == NULL){
+        printf("No test name specified\n");
+        return -1;
+    }
+
+    r = chili_dbg_create(chili_path, &debugger);
+    if (r < 0) {
+        return r;
+    }
+
+    r = chili_reg_create(1, &registry);
+    if (r < 0){
+        chili_dbg_destroy(debugger);
+        return r;
+    }
+
+    r = chili_named_parse(test_name, &library_path, &test_name);
+    if (r > 0){
+        r = _debug_test(registry, debugger,
+                        library_path, test_name);
+    }
+    else{
+        printf("Failed to parse test: %s\n", test_name);
+        return r;
+    }
 
     return r;
 }

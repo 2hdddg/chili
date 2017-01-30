@@ -50,6 +50,8 @@ static void _display_usage()
       "Running tests\n"
       "  all     Runs all tests in specified shared libraries\n"
       "  named   Runs all named tests\n"
+      "  debug   Prepares to run a named test but waits until\n"
+      "          a debugger is attached.\n"
       "\n"
       "Other\n"
       "  list    Lists all tests in specified shared libraries\n"
@@ -97,6 +99,25 @@ static void _display_named_usage()
       "%s",  /* Interactive */
       _option_named_path, _option_color, _option_cursor, _option_nice,
       _option_interactive);
+}
+
+static void _display_debug_usage()
+{
+    printf(
+      "chili debug testname\n"
+      "\n"
+      "DESCRIPTION\n"
+      "  Prepares the named test for execution but\n"
+      "  instead of executing the test, the debugger\n"
+      "  is attached and a breakpoint is set in the\n"
+      "  test.\n"
+      "  The test to debug is specified  on the form:\n"
+      "    <path to shared library>:<name of test>\n"
+      "\n"
+      "OPTIONS\n"
+      "  None\n"
+      "\n" /* Path        */
+      );
 }
 
 static void _display_list_usage()
@@ -233,6 +254,36 @@ static int _handle_named_command(int argc, char *argv[])
     return chili_command_named(path, &options);
 }
 
+static int _handle_debug_command(const char * chili_path,
+                                 int argc, char *argv[])
+{
+    int c;
+    char *test_name = NULL;
+    const char *short_options = "h:";
+    const struct option long_options[] = {
+        { "help", no_argument, 0, 'h' },
+    };
+    int index;
+
+    do {
+        c = getopt_long(argc, argv, short_options,
+                        long_options, &index);
+        switch (c){
+            case 'h':
+                _display_debug_usage();
+                return -1;
+        }
+    } while (c != -1);
+
+    if (optind < argc){
+        test_name = argv[optind];
+    }
+
+    /* Need to reset to be able to parse again */
+    optind = 0;
+
+    return chili_command_debug(chili_path, test_name);
+}
 static int _handle_list_command(int argc, char *argv[])
 {
     int c;
@@ -285,16 +336,19 @@ static int _handle_help_command(int argc, char *argv[])
         _display_all_usage();
         return 1;
     }
-
+    if (strcmp(command, "named") == 0){
+        _display_named_usage();
+        return 1;
+    }
+    if (strcmp(command, "debug") == 0){
+        _display_debug_usage();
+        return 1;
+    }
     if (strcmp(command, "list") == 0){
         _display_list_usage();
         return 1;
     }
 
-    if (strcmp(command, "named") == 0){
-        _display_named_usage();
-        return 1;
-    }
 
     printf("Unknown help topic: %s\n", command);
     return -1;
@@ -325,6 +379,11 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(command, "list") == 0){
         return _handle_list_command(argc, argv) >= 0 ?
+            0 : 1;
+    }
+    else if (strcmp(command, "debug") == 0){
+        /* Debugger needs path to chili */
+        return _handle_debug_command(argv[0], argc, argv) >= 0 ?
             0 : 1;
     }
     else if (strcmp(command, "help") == 0){

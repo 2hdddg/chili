@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -fPIC -I../../src -shared -fno-stack-protector
+CFLAGS=-std=gnu99 -Wall -Werror -fPIC -I../../src -shared -fno-stack-protector
 LD=ld
 LDFLAGS=-shared
 SOURCES=$(wildcard ../../src/*.c)
@@ -7,7 +7,7 @@ OBJECTS=$(SOURCES:../../src/%.c=out/%.o)
 DEPS=$(OBJECTS:%.o=%.d)
 COMPILING=
 CHILI=../../chili all -i
-SUITES=chili_run.so chili_main.so chili_suite.so chili_named.so chili_registry.so
+SUITES=chili_run.so chili_main.so chili_suite.so chili_named.so chili_registry.so chili_debugger.so
 SUITE_PATHS=$(SUITES:%=./%)
 
 ifeq ($(DEBUG), 1)
@@ -60,6 +60,10 @@ chili_named.so: tests_named.o out/named.o assert.o
 	@$(LD) $(LDFLAGS) $^ -o $@
 
 chili_registry.so: tests_registry.o out/registry.o assert.o
+	@echo Linking $@
+	@$(LD) $(LDFLAGS) $^ -o $@
+
+chili_debugger.so: tests_debugger.o out/debugger.o assert.o
 	@echo Linking $@
 	@$(LD) $(LDFLAGS) $^ -o $@
 

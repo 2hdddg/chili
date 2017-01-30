@@ -12,8 +12,15 @@ int assert_int(int expected, int actual);
 int assert_ret_success(int ret);
 int assert_ret_fail(int ret);
 
-int assert_not_null(void* p);
-int assert_null(void* p);
+int assert_ptr_not_null(void* p);
+int assert_ptr_null(void* p);
+int assert_ptr(const void *expected, const void *actual);
 
-int assert_timespec_less_than(struct timespec *a,
-                              struct timespec *b);
+int assert_timespec_less_than(const struct timespec *a,
+                              const struct timespec *b);
+
+int assert_file_exists(const char *path);
+int assert_file_doesnt_exists(const char *path);
+int assert_file_not_modified_after(const char *path,
+                                   const struct timespec *t);
+

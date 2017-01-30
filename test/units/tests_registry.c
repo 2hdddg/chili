@@ -33,7 +33,7 @@ int test_create_succeeds()
     _ret = chili_reg_create(1, &_handle);
 
     return assert_ret_success(_ret) &&
-           assert_not_null(_handle);
+           assert_ptr_not_null(_handle);
 }
 
 /* Verifies that destroy not crashes.
@@ -76,7 +76,7 @@ int test_can_add_over_initial_size()
     next = chili_reg_next(_handle, &_token);
 
     return assert_ret_success(_ret) &&
-           assert_not_null(next) &&
+           assert_ptr_not_null(next) &&
            assert_int(2, *next);
 }
 
@@ -113,8 +113,8 @@ int test_can_find()
     found_2 = (int*)chili_reg_find(_handle, "two");
     found_1 = (int*)chili_reg_find(_handle, "one");
 
-    return assert_not_null(found_1) &&
-           assert_not_null(found_2) &&
+    return assert_ptr_not_null(found_1) &&
+           assert_ptr_not_null(found_2) &&
            assert_int(1, *found_1) &&
            assert_int(2, *found_2);
 }
@@ -130,6 +130,6 @@ int test_find_when_not_existing()
 
     found = chili_reg_find(_handle, "nothing");
 
-    return assert_null(found);
+    return assert_ptr_null(found);
 }
 

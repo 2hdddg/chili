@@ -58,6 +58,25 @@ int chili_command_all(const char **library_paths,
 int chili_command_named(const char *names_path,
                         const struct chili_test_options *options);
 
+/**
+ * @brief Debugs the named test
+ *
+ * Attaches debugger to the test right before it
+ * is executed.
+ *
+ * @param chili_path    Path to chili executable used to
+ *                      invoke the test.
+ * @param test_name     Name of test to debug, should include
+ *                      path and name of shared library containing
+ *                      the test.
+ *
+ * @return Negative on error.
+ *         Otherwise, no return at all, debugger takes over
+ *         the process.
+ */
+int chili_command_debug(const char *chili_path,
+                        char *test_name);
+
 
 /**
  * @brief Prints list of tests in suite.

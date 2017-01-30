@@ -9,6 +9,7 @@
 
 #include "redirect.h"
 #include "run.h"
+#include "debugger.h"
 
 /* Debugging */
 #define DEBUG_PRINTS 0
@@ -220,6 +221,7 @@ static int _fork_and_run(chili_func each_before,
         _exit(0);
     }
 
+
     /* Continue in parent process */
     debug_print("Waiting for child process %d to execute test\n", child);
     _me_read_result(result, times, pipes[0]);
@@ -248,6 +250,45 @@ static int _fork_and_run(chili_func each_before,
     sigprocmask(SIG_UNBLOCK, &blocked_signals, NULL);
 
     return 1;
+}
+
+static int _fork_and_debug(chili_handle debugger,
+                           chili_func each_before,
+                           chili_func test,
+                           chili_func each_after,
+                           const char *name)
+{
+    pid_t child = fork();
+    enum fixture_result result_before;
+
+    if (child < 0){
+        printf("Failed to fork: %s\n", strerror(errno));
+        return -1;
+    }
+
+    if (child == 0){
+        debug_print("In child preparing to debug test\n");
+        chili_dbg_target_prepare(debugger);
+
+        /* Run setup fixture */
+        result_before = evaluate_fixture(each_before);
+        if (result_before != fixture_error){
+            /* Hold until debugger attached */
+            chili_dbg_target_hold(debugger);
+            /* Run the actual test, debugger has
+             * been setup to break in test func. */
+            test();
+            /* Run teardown fixture */
+            evaluate_fixture(each_after);
+        }
+        /* Exit child here ! */
+        debug_print("Exiting process %d\n", getpid());
+        _exit(0);
+    }
+
+    /* Continue in parent process, use parent to
+     * exec into debugger. */
+    return chili_dbg_attach(debugger, child, name);
 }
 
 /* Exports */
@@ -297,6 +338,15 @@ int chili_run_test(struct chili_result *result,
     _aggregate(result, aggregated);
 
     return 1;
+}
+
+int chili_run_debug(chili_handle debugger,
+                    const struct chili_bind_test *test,
+                    const struct chili_bind_fixture *fixture)
+{
+    return _fork_and_debug(debugger,
+                           fixture->each_before, test->func,
+                           fixture->each_after, test->name);
 }
 
 int chili_run_after(const struct chili_bind_fixture *fixture)

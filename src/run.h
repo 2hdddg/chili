@@ -112,6 +112,20 @@ int chili_run_test(struct chili_result *result,
                    chili_progress test_progress);
 
 /**
+ * @brief Debugs test.
+ *
+ * @param debugger Debugger module instance.
+ * @param test     Bound test to debug.
+ * @param fixture  Bound fixture.
+ *
+ * @return Negative on error
+ *         Never return on success.
+ */
+int chili_run_debug(chili_handle debugger,
+                    const struct chili_bind_test *test,
+                    const struct chili_bind_fixture *fixture);
+
+/**
  * @brief Runs after fixture.
  *
  * Applies fixture cleanup.

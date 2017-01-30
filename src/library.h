@@ -66,6 +66,20 @@ int chili_lib_named_test(chili_handle handle,
                          struct chili_aggregated *aggregated);
 
 /**
+ * @brief Debugs test in library by name.
+ *
+ * @param handle    Library handle.
+ * @param debugger  Debugger module instance.
+ * @param name      Name of test to debug in library instance.
+ *
+ * @return Negative on error.
+ *         Never return on success.
+ */
+int chili_lib_debug_test(chili_handle handle,
+                         chili_handle debugger,
+                         const char *name);
+
+/**
  * @brief Finishes test execution in this library.
  *
  * @return Negative on error.
