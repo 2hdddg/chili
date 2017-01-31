@@ -1,47 +1,46 @@
 
-                             xX Chili Xx
-                          unit tests for C in C
+# Chili - testrunner for C in C
 
-    - What is Chili ?
+### What is Chili
+A test runner for C programmers that makes it easy and fun to write nice
+and slim unit tests with minimum hazzle. You write your Chili tests
+completely without build dependencies.
 
-      A program that finds and executes unit tests. Used to write nice
-      and slim unit tests in C. Written in C with minimal dependencies
-      for portability to be used on target for embedded development.
+Chili is written in C with minimal dependencies on external libraries.
+The idea is that Chili could be used on target for embedded development.
 
-    - How does it work ?
+### Installation
+```bash
+~$ make && make install
+```
+### Example unit test
+**Create new file**: unittests.c
 
-      A suite of unit tests is compiled into an ELF shared library.
-      Each unit test is an exported function following these rules:
+```C
+#include <stdio.h>
 
-      Note that the test code is the simplest possible, you don't
-      need to include any header files or link to any library.
+int test_that_succeeds()
+{
+    printf("Returning 1 indicates success");
+    return 1;
+}
+```
+Tests should always be named with the prefix *test_*. Also note
+that the funcion must NOT be static.
 
-      * Unit test functions starts with test_
-      * Unit test functions takes no arguments
-      * Unit test functions returns int
-      * Unit test functions returns > 0 on success
-      * Unit test functions returns 0 on failure
-      * Unit test functions returns < 0 on error
+**Build the unittest:**
+```bash
+~$ gcc unittests.c -fPIC --shared -o unittests.so
+```
+Chili requires that a share library is built.
 
-      To use a common setup in a test suite, export these functions:
-
-      * once_before for once per suite setup. Executed before any
-        test function.
-      * once_after for once per suite cleanup. Executed after all
-        test functions, regardless of success or failure.
-      * each_before for test setup. Executed before every test
-        function.
-      * each_after for test cleanup. Executed after every test
-        function
-
-      All of these functions takes no arguments and their return
-      values follow the same rules as the test functions.
-
-    - How do I run tests ?
-
-      Compile and install Chili on the target system.
-      Compile and copy shared libraries containing tests to the
-      target system and:
-
-      chili testsuite.so
-
+**Run the unittest:**
+```bash
+~$ chili all ./unittests.so
+./unittests.so: test_that_succeeds: Success [0]
+Executed: 1, Succeeded: 1, Failed: 0, Errors: 0
+```
+The *all* command executes all tests in the shared library,
+in this case only one test. 
+Note that the output of *printf* is not shown in the output above, 
+Chili will default to suppress output of all succeeding tests.
