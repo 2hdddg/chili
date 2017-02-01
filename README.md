@@ -154,3 +154,15 @@ Gdb of course needs to be installed for this to work.
 
 ### Other usable commands
 
+To list all tests in a suite use the *list* command:
+```bash
+~$ chili list ./unittests.so
+./unittests.so:test_one
+./unittests.so:test_two
+```
+Format of listed test are on the same format that is used to run tests by name. The *named* command runs all named tests that is found in a file or from stdin:
+```bash
+~$ chili list ./unittests.so | grep two | chili named
+./unittests.so: test_two: Success [0]
+Executed: 1, Succeeded: 1, Failed: 0, Errors: 0
+```
