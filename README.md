@@ -130,7 +130,7 @@ int test_that_crashes()
 To be able to debug, the tests and other linked modules need to be built with debug information:
 
 ```bash
-~$ gcc unittests.c -fPIC --shared -o unittests.so
+~$ gcc unittests.c -fPIC --shared -g -o unittests.so
 ```
 
 Debugging is done with Chilis debug command and the name of the test:
@@ -150,7 +150,7 @@ Breakpoint 1, test_that_crashes () at unittest.c:3
 3       int *x = (int*)0;
 (gdb)
 ```
-
+Gdb of course needs to be installed for this to work.
 
 ### Other usable commands
 
