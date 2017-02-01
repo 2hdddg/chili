@@ -13,7 +13,7 @@ The idea is that Chili could be used on target for embedded development.
 ```bash
 ~$ make && make install
 ```
-### Example unit test
+### Simplest possible unit test
 **Create new file**: unittests.c
 
 ```C
@@ -21,20 +21,21 @@ The idea is that Chili could be used on target for embedded development.
 
 int test_that_succeeds()
 {
-    printf("Returning 1 indicates success");
+    printf("Returning 1 indicates success\n");
     return 1;
 }
 ```
 Tests should always be named with the prefix *test_*. Also note
 that the funcion must NOT be static.
 
-**Build the unittest:**
+**Build the unit test:**
 ```bash
 ~$ gcc unittests.c -fPIC --shared -o unittests.so
 ```
-Chili requires that a share library is built.
+This builds a shared library with the test as an exported
+symbol. This what Chili finds and executes.
 
-**Run the unittest:**
+**Run the unit test:**
 ```bash
 ~$ chili all ./unittests.so
 ./unittests.so: test_that_succeeds: Success [0]
@@ -44,3 +45,74 @@ The *all* command executes all tests in the shared library,
 in this case only one test. 
 Note that the output of *printf* is not shown in the output above, 
 Chili will default to suppress output of all succeeding tests.
+
+### Unit test return values
+Unit tests should always return an int and should not
+take any parameters. Chili interprets the returned values the
+following way:
+
+* Positive values are interpreted as a successful/green test.
+* Zero are interpreted as a failing/red test.
+* Negative values are interpreted as an unexpected error occured
+while executing the test. Chili will not execute any more tests
+in this suite when it encounters a test that returns a negative
+value.
+
+A test could also crash during it's execution, this is reported
+as a crash but Chili will continue executing other tests.
+
+```C
+#include <stdio.h>
+
+int test_that_succeeds()
+{
+    printf("Positive indicates success\n");
+    return 1;
+}
+
+int test_that_fails()
+{
+    printf("Zero indicates failure\n");
+    return 0;
+}
+
+int test_that_crashes()
+{
+    int *x = (int*)0;
+    printf("This will crash\n");
+    *x = 0;
+}
+
+int test_with_error()
+{
+    printf("This is an error\n");
+    return -1;
+}
+```
+Build this into a shared library named unittests.so and let Chili execute the tests:
+
+```bash
+~$ chili all ./unittests.so
+./unittests.so: test_that_succeeds: Success [0]
+./unittests.so: test_that_fails: Failed [1]
+>>>Capture start
+Zero indicates failure
+<<< Capture end
+./unittests.so: test_that_crashes: Crashed [2]
+>>> Capture start
+This will crash
+<<< Capture end
+./unittests.so: test_with_error: Error [3]
+>>> Capture start
+This is an error
+<<< Capture end
+Executed: 4, Succeeded: 1, Failed: 1, Errors: 2
+```
+As shown above prints are only shown on tests with any type of problem.
+
+### Suite setup functions
+
+### Debugging a unit test
+
+### Other usable commands
+
