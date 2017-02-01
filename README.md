@@ -13,6 +13,8 @@ The idea is that Chili could be used on target for embedded development.
 ```bash
 ~$ make && make install
 ```
+Chili is Linux only.
+
 ### Simplest possible unit test
 **Create new file**: unittests.c
 
@@ -113,6 +115,42 @@ As shown above prints are only shown on tests with any type of problem.
 ### Suite setup functions
 
 ### Debugging a unit test
+To debug a problematic unit test do like this. To debug the test *test_that_crashes* in the following module.
+
+```C
+#include <stdio.h>
+
+int test_that_crashes()
+{
+    int *x = (int*)0;
+    printf("This will crash\n");
+    *x = 0;
+}
+```
+To be able to debug, the tests and other linked modules need to be built with debug information:
+
+```bash
+~$ gcc unittests.c -fPIC --shared -o unittests.so
+```
+
+Debugging is done with Chilis debug command and the name of the test:
+```bash
+~$ chili debug ./unittests.so:test_that_crashes
+GNU gdb (Ubuntu 7.11.1-0ubuntu1~16.04) 7.11.1
+Copyright (C) 2016 Free Software Foundation, Inc
+...
+Attaching to process 1637
+Reading symbols from ...
+Reading symbols ./unittests.so..done
+...
+Breakpoint 1 at 0x7fa51cab1766: file unittest.c, line 3.
+Continuing with signal SIGCONT.
+
+Breakpoint 1, test_that_crashes () at unittest.c:3
+3       int *x = (int*)0;
+(gdb)
+```
+
 
 ### Other usable commands
 
